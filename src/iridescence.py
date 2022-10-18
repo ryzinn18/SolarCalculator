@@ -85,7 +85,10 @@ class Iridescence:
     @staticmethod
     def get_out_obj(monthly, annual) -> dict:
         """Generate an output object for the instance of the class"""
-        out_obj = {'annual': annual}
+        out_obj = {
+            'annual': annual,
+            'monthly': monthly
+        }
         for i, month in enumerate(monthly, 1):
             out_obj[i] = month
 
