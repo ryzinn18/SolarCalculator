@@ -11,87 +11,118 @@ Should probably start with just a simple python class.
 - could have a handler which decides how to convert the input data from the options above into a uniform class.
 """
 
-# from utils import MONTHS_MAP
+#from utils import MONTHS_MAP
 from typing import List, AnyStr, Dict
 
-MONTHS_MAP = {
-    1: "January",
-    2: "February",
-    3: "March",
-    4: "April",
-    5: "May",
-    6: "June",
-    7: "July",
-    8: "August",
-    9: "September",
-    10: "October",
-    11: "November",
-    12: "December"
+
+TEMPLATE_DATA_OBJECT = {
+    'consumption': [],
+    'cost': []
 }
 
-
-def csv_consumption(file_path: AnyStr) -> List[int]:
+def csv_consumption(file_path: AnyStr) -> Dict:
     """Call this function to read a csv with specified format for monthly consumption."""
     from csv import reader
 
-    monthly = []
+    data = TEMPLATE_DATA_OBJECT
     with open(file_path, 'r') as file:
         csv = reader(file)
         next(csv)
         for row in csv:
-            monthly.append(int(round(float(row[2]), 0)))
+            data['consumption'].append(round(float(row[2])))
+            data['cost'].append(float(row[3]))
 
-    return monthly
+    return data
 
 
-def xlsx_consumption(file_path: AnyStr) -> List[int]:
+def xlsx_consumption(file_path: AnyStr) -> Dict:
     """Call this function to read a xlsx with specified format for monthly consumption."""
     from openpyxl import load_workbook
     sheet = load_workbook(file_path)['Sheet1']
 
-    monthly = []
+    data = TEMPLATE_DATA_OBJECT
     for i in range(2, 14):
-        monthly.append(int(sheet[f'C{i}'].value))
+        data['consumption'].append(int(sheet[f'C{i}'].value))
+        data['cost'].append(float(sheet[f'D{i}'].value))
 
-    return monthly
+    return data
+
+
+def sheets_consumption() -> Dict:
+    """
+    Script from below for extracting data from google sheets.
+    https://medium.com/analytics-vidhya/how-to-read-and-write-data-to-google-spreadsheet-using-python-ebf54d51a72c
+    """
+    from googleapiclient.discovery import build
+    from google_auth_oauthlib.flow import InstalledAppFlow
+    from google.auth.transport.requests import Request
+    from os.path import exists as os_exists
+    import pickle
+
+    scopes = ['https://www.googleapis.com/auth/spreadsheets']
+
+    sheet_id = '1gneTmzTrGTsJIrjkjzEOYS-Bq7irB_WZ2TJWXMlFp4k'
+    sheet_ranges = ['C3:C13', 'D3:D13']
+
+    credentials = None
+    if os_exists('token.pickle'):
+        with open('token.pickle', 'rb') as token:
+            credentials = pickle.load(token)
+    if not credentials or not credentials.valid:
+        if credentials and credentials.expired and credentials.refresh_token:
+            credentials.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file(
+                'credentials.json', scopes)
+            credentials = flow.run_local_server(port=0)
+        with open('token.pickle', 'wb') as token:
+            pickle.dump(credentials, token)
+
+    service = build('sheets', 'v4', credentials=credentials)
+
+    # Call the Sheets API
+    sheet = service.spreadsheets()
+    input_data = sheet.values().batchGet(spreadsheetId=sheet_id, ranges=sheet_ranges).execute()
+
+    cons_vals = input_data.get('valueRanges')[0].get('values')
+    cost_vals = input_data.get('valueRanges')[1].get('values')
+
+    data = {
+        'consumption': [round(float(sublist[0])) for sublist in cons_vals],
+        'cost': [float(sublist[0]) for sublist in cost_vals]
+    }
+
+    return data
 
 
 def manual_input_consumption() -> List[int]:
     """Get monthly consumption via python input()"""
     # return [1481, 1317, 1664, 2294, 1938, 1829, 3212, 2641, 2194, 1771, 1678, 1713]
 
-    print("Please enter the monthly kWh (whole numbers only) consumption for:")
+    print("Please enter the monthly consumption and cost values for:")
 
-    monthly = []
+    data = TEMPLATE_DATA_OBJECT
     for i in range(1, 13):
-        monthly.append(int(round(float(input(f"\t{MONTHS_MAP[i]}: ")), 0)))
+        data['consumption'].append(round(float(input(f"\tConsumption {MONTHS_MAP[i]}: "))))
+        data['cost'].append(round(float(input(f"\tCost {MONTHS_MAP[i]}: ")), 2))
 
-    return monthly
+    return data
 
 
 class Consumption:
 
     def __init__(self, cons_monthly: List):
-
         self.cons_monthly = cons_monthly
-        self.cons_annual = self.get_clean_annual(annual=sum(self.cons_monthly))
+        self.cons_annual = sum(self.cons_monthly)
         self.cons_obj: Dict
 
     def __repr__(self):
         return (
-            f"Consumption:\n"
-            + f"\tannual consumption = {self.cons_annual}\n"
-            + f"\tmonthly consumption = {self.cons_monthly}"
+                f"Consumption:\n"
+                + f"\tannual consumption = {self.cons_annual}\n"
+                + f"\tmonthly consumption = {self.cons_monthly}"
         )
-
-    # IMPORT FROM UTILS
-    @staticmethod
-    def get_clean_annual(annual: int) -> AnyStr:
-        """Convert the float ac_annual figure to a string with 2 decimal places"""
-        return str(round(annual, 2))
 
 
 if __name__ == "__main__":
-    # path = r"/Users/nicolaaspjedema/Desktop/SolarCalculator/samples/sample_consumption.xlsx"
-    monthly = manual_input_consumption()
-    print(Consumption(monthly))
+    print(xlsx_consumption(r'/Users/nicolaaspjedema/Desktop/SolarCalculator/samples/sample_consumption.xlsx'))

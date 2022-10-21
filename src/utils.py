@@ -1,8 +1,7 @@
 """
 ToDo (smaller):
+- Add cost/value to data objects
 - Create uniform class (pydantic) for data objects.
-- Figure out why git hub wont push on laptop.
-- Import/interact with google sheets.
 
 ToDo (large):
 - Unit test all modules.
@@ -13,7 +12,8 @@ ToDo (large):
 - Package!
 """
 
-from typing import List, Dict
+from pydantic import BaseModel
+from typing import List, Dict, Literal, AnyStr
 
 MONTHS_MAP = {
     1: "January",
@@ -29,6 +29,20 @@ MONTHS_MAP = {
     11: "November",
     12: "December"
 }
+
+
+class Energy(BaseModel):
+    # Required
+    name: AnyStr
+    obj_type: Literal['consumption', 'iridescence']
+    monthly_energy_data: List[int]
+    annual_energy_data: int
+    monthly_cost_data: List[float]
+    annual_cost_data: float
+    # Optional
+    units = 'kiloWattHours'
+    months_int = sorted(MONTHS_MAP.keys())
+    months_str = [MONTHS_MAP[n] for n in months_int]
 
 
 def round_list_elems(monthly: List[int]) -> List[int]:

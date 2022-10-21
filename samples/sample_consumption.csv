@@ -1,13 +1,13 @@
-,Month,Consumption kWh
-1,January,1481
-2,February,1317
-3,March,1664
-4,April,2294
-5,May,1938
-6,June,1829
-7,July,3212
-8,August,2641
-9,September,2194
-10,October,1771
-11,November,1678
-12,December,1713
+,Month,Consumption kWh,Cost
+1,January,1490,130.23
+2,February,1236.55,101.34
+3,March,1664,145.6
+4,April,2294,199.29
+5,May,1938,178.62
+6,June,1829,169.69
+7,July,3212,220.41
+8,August,2641,178.37
+9,September,2194,130.65
+10,October,1771,125.62
+11,November,1678,120.54
+12,December,1713.23,135.34
