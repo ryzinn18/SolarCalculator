@@ -33,11 +33,12 @@ class Iridescence:
         self.irid_monthly = round_list_elems(actual_monthly)
         self.irid_annual = round(actual_annual)
         self.irid_obj = get_out_obj(self.irid_monthly, self.irid_annual)
+        self.note = "Iridescence reported over a 30 year average."
 
     def __repr__(self):
         return (
                 f"Iridescence:\n"
-                + f"\tNOTE: Iridescence reported is over a 30 year average.\n"
+                + f"\tNOTE: Iridescence reported over a 30 year average.\n"
                 + f"\tannual iridescence = {self.irid_annual}\n"
                 + f"\tmonthly iridescence = {self.irid_monthly}\n"
         )

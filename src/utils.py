@@ -11,9 +11,8 @@ ToDo (large):
 - Top down documentation.
 - Package!
 """
-
-from pydantic import BaseModel
-from typing import List, Dict, Literal, AnyStr
+from pydantic import BaseModel, conlist, PositiveInt
+from typing import List, Dict, Optional, AnyStr, Literal
 
 MONTHS_MAP = {
     1: "January",
@@ -31,23 +30,9 @@ MONTHS_MAP = {
 }
 
 
-class Energy(BaseModel):
-    # Required
-    name: AnyStr
-    obj_type: Literal['consumption', 'iridescence']
-    monthly_energy_data: List[int]
-    annual_energy_data: int
-    monthly_cost_data: List[float]
-    annual_cost_data: float
-    # Optional
-    units = 'kiloWattHours'
-    months_int = sorted(MONTHS_MAP.keys())
-    months_str = [MONTHS_MAP[n] for n in months_int]
-
-
-def round_list_elems(monthly: List[int]) -> List[int]:
+def round_list_elems(l: List[int]) -> List[int]:
     """Clean up the monthly list by converting to strings and rounding to 2 decimal spaces"""
-    return [round(month) for month in monthly]
+    return [round(elem) for elem in l]
 
 
 def get_out_obj(monthly: List[int], annual: int) -> Dict:
@@ -60,3 +45,26 @@ def get_out_obj(monthly: List[int], annual: int) -> Dict:
         out_obj[i] = month
 
     return out_obj
+
+
+class Metrics(BaseModel):
+    # Required
+    name: AnyStr
+    obj_type: Literal['cost', 'consumption', 'iridescence']
+    data_monthly: conlist(PositiveInt, min_items=12, max_items=12)
+    data_annual: PositiveInt
+    units: str
+    # Optional
+    note: Optional[str]
+
+
+class Data(Metrics):
+    def __init__(self, metrics: Metrics):
+        self.months_int = MONTHS_MAP.keys()
+        self.months_str = [MONTHS_MAP[n] for n in self.months_int]
+        self.data_object = get_out_obj(monthly=metrics.data_monthly, annual=metrics.data_annual)
+
+
+if __name__ == '__main__':
+    a = "test"
+    print(a.title())

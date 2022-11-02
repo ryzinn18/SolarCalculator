@@ -11,7 +11,7 @@ Should probably start with just a simple python class.
 - could have a handler which decides how to convert the input data from the options above into a uniform class.
 """
 
-#from utils import MONTHS_MAP
+from .utils import MONTHS_MAP, get_out_obj
 from typing import List, AnyStr, Dict
 
 
@@ -19,6 +19,7 @@ TEMPLATE_DATA_OBJECT = {
     'consumption': [],
     'cost': []
 }
+
 
 def csv_consumption(file_path: AnyStr) -> Dict:
     """Call this function to read a csv with specified format for monthly consumption."""
@@ -30,7 +31,7 @@ def csv_consumption(file_path: AnyStr) -> Dict:
         next(csv)
         for row in csv:
             data['consumption'].append(round(float(row[2])))
-            data['cost'].append(float(row[3]))
+            data['cost'].append(round(float(row[3])))
 
     return data
 
@@ -42,13 +43,13 @@ def xlsx_consumption(file_path: AnyStr) -> Dict:
 
     data = TEMPLATE_DATA_OBJECT
     for i in range(2, 14):
-        data['consumption'].append(int(sheet[f'C{i}'].value))
-        data['cost'].append(float(sheet[f'D{i}'].value))
+        data['consumption'].append(round(float((sheet[f'C{i}'].value))))
+        data['cost'].append(round(float(sheet[f'D{i}'].value)))
 
     return data
 
 
-def sheets_consumption() -> Dict:
+def sheets_consumption(sheet_id: AnyStr) -> Dict:
     """
     Script from below for extracting data from google sheets.
     https://medium.com/analytics-vidhya/how-to-read-and-write-data-to-google-spreadsheet-using-python-ebf54d51a72c
@@ -61,21 +62,20 @@ def sheets_consumption() -> Dict:
 
     scopes = ['https://www.googleapis.com/auth/spreadsheets']
 
-    sheet_id = '1gneTmzTrGTsJIrjkjzEOYS-Bq7irB_WZ2TJWXMlFp4k'
-    sheet_ranges = ['C3:C13', 'D3:D13']
+    sheet_ranges = ['C2:C13', 'D2:D13']
 
     credentials = None
-    if os_exists('token.pickle'):
-        with open('token.pickle', 'rb') as token:
+    if os_exists('./.creds/token.pickle'):
+        with open('./.creds/token.pickle', 'rb') as token:
             credentials = pickle.load(token)
     if not credentials or not credentials.valid:
         if credentials and credentials.expired and credentials.refresh_token:
             credentials.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials.json', scopes)
+                r'./.creds/credentials.json', scopes)
             credentials = flow.run_local_server(port=0)
-        with open('token.pickle', 'wb') as token:
+        with open('./.creds/token.pickle', 'wb') as token:
             pickle.dump(credentials, token)
 
     service = build('sheets', 'v4', credentials=credentials)
@@ -95,7 +95,7 @@ def sheets_consumption() -> Dict:
     return data
 
 
-def manual_input_consumption() -> List[int]:
+def manual_input_consumption() -> Dict:
     """Get monthly consumption via python input()"""
     # return [1481, 1317, 1664, 2294, 1938, 1829, 3212, 2641, 2194, 1771, 1678, 1713]
 
@@ -114,13 +114,28 @@ class Consumption:
     def __init__(self, cons_monthly: List):
         self.cons_monthly = cons_monthly
         self.cons_annual = sum(self.cons_monthly)
-        self.cons_obj: Dict
+        self.cons_obj = get_out_obj(monthly=self.cons_monthly, annual=self.cons_annual)
 
     def __repr__(self):
         return (
                 f"Consumption:\n"
                 + f"\tannual consumption = {self.cons_annual}\n"
                 + f"\tmonthly consumption = {self.cons_monthly}"
+        )
+
+
+class Cost:
+
+    def __init__(self, cost_monthly: List):
+        self.cost_monthly = cost_monthly
+        self.cost_annual = sum(self.cost_monthly)
+        self.cost_obj = get_out_obj(monthly=self.cost_monthly, annual=self.cost_annual)
+
+    def __repr__(self):
+        return (
+                f"Cost:\n"
+                + f"\tannual cost = {self.cost_annual}\n"
+                + f"\tmonthly cost = {self.cost_monthly}"
         )
 
 
