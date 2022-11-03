@@ -12,7 +12,7 @@ ToDo (large):
 - Package!
 """
 from pydantic import BaseModel, conlist, PositiveInt
-from typing import List, Dict, Optional, AnyStr, Literal
+from typing import Any, List, Dict, Optional, AnyStr, Literal
 
 MONTHS_MAP = {
     1: "January",
@@ -30,41 +30,16 @@ MONTHS_MAP = {
 }
 
 
-def round_list_elems(l: List[int]) -> List[int]:
-    """Clean up the monthly list by converting to strings and rounding to 2 decimal spaces"""
-    return [round(elem) for elem in l]
-
-
-def get_out_obj(monthly: List[int], annual: int) -> Dict:
-    """Generate an output object for the instance of the class"""
-    out_obj = {
-        'annual': annual,
-        'monthly': monthly
-    }
-    for i, month in enumerate(monthly, 1):
-        out_obj[i] = month
-
-    return out_obj
-
-
 class Metrics(BaseModel):
     # Required
     name: AnyStr
     obj_type: Literal['cost', 'consumption', 'iridescence']
     data_monthly: conlist(PositiveInt, min_items=12, max_items=12)
     data_annual: PositiveInt
-    units: str
+    units: Literal['kiloWattHours', 'dollars']
     # Optional
     note: Optional[str]
 
 
-class Data(Metrics):
-    def __init__(self, metrics: Metrics):
-        self.months_int = MONTHS_MAP.keys()
-        self.months_str = [MONTHS_MAP[n] for n in self.months_int]
-        self.data_object = get_out_obj(monthly=metrics.data_monthly, annual=metrics.data_annual)
-
-
 if __name__ == '__main__':
-    a = "test"
-    print(a.title())
+    pass

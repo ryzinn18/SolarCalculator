@@ -11,13 +11,14 @@ Should probably start with just a simple python class.
 - could have a handler which decides how to convert the input data from the options above into a uniform class.
 """
 
-from .utils import MONTHS_MAP, get_out_obj
+from .utils import MONTHS_MAP
 from typing import List, AnyStr, Dict
 
 
 TEMPLATE_DATA_OBJECT = {
     'consumption': [],
-    'cost': []
+    'cost': [],
+    'note': None
 }
 
 
@@ -107,36 +108,6 @@ def manual_input_consumption() -> Dict:
         data['cost'].append(round(float(input(f"\tCost {MONTHS_MAP[i]}: ")), 2))
 
     return data
-
-
-class Consumption:
-
-    def __init__(self, cons_monthly: List):
-        self.cons_monthly = cons_monthly
-        self.cons_annual = sum(self.cons_monthly)
-        self.cons_obj = get_out_obj(monthly=self.cons_monthly, annual=self.cons_annual)
-
-    def __repr__(self):
-        return (
-                f"Consumption:\n"
-                + f"\tannual consumption = {self.cons_annual}\n"
-                + f"\tmonthly consumption = {self.cons_monthly}"
-        )
-
-
-class Cost:
-
-    def __init__(self, cost_monthly: List):
-        self.cost_monthly = cost_monthly
-        self.cost_annual = sum(self.cost_monthly)
-        self.cost_obj = get_out_obj(monthly=self.cost_monthly, annual=self.cost_annual)
-
-    def __repr__(self):
-        return (
-                f"Cost:\n"
-                + f"\tannual cost = {self.cost_annual}\n"
-                + f"\tmonthly cost = {self.cost_monthly}"
-        )
 
 
 if __name__ == "__main__":
