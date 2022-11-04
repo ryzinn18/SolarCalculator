@@ -1,18 +1,5 @@
-"""
-ToDo (smaller):
-- Add cost/value to data objects
-- Create uniform class (pydantic) for data objects.
-
-ToDo (large):
-- Unit test all modules.
-- Create web UI (JavaScript).
-    - Build UI.
-    - Build APIs.
-- Top down documentation.
-- Package!
-"""
 from pydantic import BaseModel, conlist, PositiveInt
-from typing import Any, List, Dict, Optional, AnyStr, Literal
+from typing import Optional, AnyStr, Literal
 
 MONTHS_MAP = {
     1: "January",
@@ -28,6 +15,8 @@ MONTHS_MAP = {
     11: "November",
     12: "December"
 }
+
+ListMonthly = conlist(item_type=PositiveInt, min_items=12, max_items=12)
 
 
 class Metrics(BaseModel):

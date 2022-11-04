@@ -1,6 +1,20 @@
-import math
+from math import ceil
 import numpy as np
 import matplotlib.pyplot as plt
+
+
+def calculate_mod_quantity(needed_kwh: int, mod_kwh: int) -> int:
+    return ceil(needed_kwh / mod_kwh)
+
+
+def calculate_savings(annual_prod: int) -> int:
+    price_kwh = 0.28       #float(input("What is the cost (dollars) for a kWh? ")
+    savings = annual_prod * price_kwh
+    return round(savings)
+
+
+def main(annual_cons, monthly_cons, annual_prod, monthly_prod, needed_kwh, mod_kwh):
+
 
 
 class Results():
@@ -21,9 +35,9 @@ class Results():
 
     def get_mod_quantity(self):
         self.mod_quantity = self.needed_kwh / self.mod_kwh
-        self.mod_quantity_fig = math.ceil(self.mod_quantity)
+        self.mod_quantity_fig = ceil(self.mod_quantity)
         print(f"{title} will need {self.mod_quantity_fig} mods.")
-        return math.ceil(self.mod_quantity)
+        return ceil(self.mod_quantity)
 
     def calculate_savings(self):
         self.price_kwh = 0.28       #float(input("What is the cost (dollars) for a kWh? ")

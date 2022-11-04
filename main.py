@@ -1,8 +1,17 @@
 """
-main module for testing SolarCalculator
+ToDo (smaller):
+- Create uniform class (pydantic) for data objects.
+
+ToDo (large):
+- Unit test all modules.
+- Create web UI (JavaScript).
+    - Build UI.
+    - Build APIs.
+- Top down documentation.
+- Package!
 """
-from src import consumption
-from src.iridescence import get_iridescence as irid
+from src import input_handler
+from src.iridescence import get_solar_potential
 from src.utils import Metrics
 
 SAMPLE_NAME = 'RyanTest'
@@ -26,30 +35,30 @@ def print_metrics(m) -> None:
 def main():
     mod_kwh = 0.4   # float(input("What is the production (kWh) for this project's modules?))
 
-    consumption_object = consumption.csv_consumption(file_path=SAMPLE_CSV)
-    iridescence_object = irid(address=SAMPLE_ADDRESS, annual_consumption=sum(consumption_object.get('consumption')))
+    input_object = input_handler.input_csv(file_path=SAMPLE_CSV)
+    solar_potential_object = get_solar_potential(address=SAMPLE_ADDRESS, annual_consumption=sum(input_object.get('consumption')))
 
     metrics_cons = Metrics(
         name=SAMPLE_NAME,
         obj_type='consumption',
-        data_monthly=consumption_object.get('consumption'),
-        data_annual=sum(consumption_object.get('consumption')),
+        data_monthly=input_object.get('consumption'),
+        data_annual=sum(input_object.get('consumption')),
         units='kiloWattHours'
     )
     metrics_cost = Metrics(
         name=SAMPLE_NAME,
         obj_type='cost',
-        data_monthly=consumption_object.get('cost'),
-        data_annual=sum(consumption_object.get('cost')),
+        data_monthly=input_object.get('cost'),
+        data_annual=sum(input_object.get('cost')),
         units='dollars'
     )
     metrics_irid = Metrics(
         name=SAMPLE_NAME,
         obj_type='iridescence',
-        data_monthly=iridescence_object.get('iridescence'),
-        data_annual=sum(iridescence_object.get('iridescence')),
+        data_monthly=solar_potential_object.get('iridescence'),
+        data_annual=sum(solar_potential_object.get('iridescence')),
         units='kiloWattHours',
-        note=iridescence_object.get('note')
+        note=solar_potential_object.get('note')
     )
 
     print_metrics(metrics_cons)
