@@ -1,25 +1,27 @@
-"""
-I have a lot of thoughts about this one. I would like for multiple ways in input the annual consumption:
-- upload a .csv or .xlsx
-- upload via a google sheet?
-- upload via python:
-    - probably just using input() initially
-    - maybe eventually will have a basic website UI and can input there?
+# input_handler.py
+from .utils import MONTHS_MAP, ListMonthly
+from pydantic import BaseModel, PositiveFloat, confloat, ValidationError, PositiveInt
+from os import PathLike
+from typing import List, Literal, Any
 
-Should probably start with just a simple python class.
-- could eventually have a parent class and each of the above options could be child classes?
-- could have a handler which decides how to convert the input data from the options above into a uniform class.
-"""
-from pydantic import BaseModel, conlist, PositiveInt, PositiveFloat
-from src.utils import MONTHS_MAP, ListMonthly
-from typing import List
+
+InputTypes = Literal['csv', 'xlsx', 'sheet', 'manual']
+
+
+class InputError(Exception):
+    """Error for an invalid Input"""
+    valid_input_types = ['csv', 'xlsx', 'sheet', 'manual']
 
 
 class InputData(BaseModel):
-    # Mandatory
-    # name: str
-    consumption: ListMonthly
-    cost: ListMonthly
+    # Required
+    name: str
+    address: str
+    mod_kwh: confloat(gt=0.0, lt=1.0)
+    consumption_monthly: ListMonthly
+    consumption_annual: PositiveInt
+    cost_monthly: ListMonthly
+    cost_annual: PositiveInt
     cost_per_kwh: PositiveFloat
     # Optional
     note: str = None
@@ -36,38 +38,67 @@ def _calculate_cost_per_kwh(cost: List, consumption: List) -> PositiveFloat:
     return round(sum(monthly_cost_per_kwh) / len(monthly_cost_per_kwh), 2)
 
 
-def input_csv(file_path: str) -> InputData:
+def _validate_mod_kwh(in_data: str) -> float:
+    """Helper function to validate that the data passed is a float."""
+    try:
+        return float(in_data)
+    except ValueError:
+        raise ValidationError(
+            "The value entered for solar module capacity is invalid."
+            + "This must be a decimal between 0 and 1."
+        )
+
+
+def input_csv(file_path: PathLike[str]) -> InputData:
     """Call this function to read a csv with specified format for monthly consumption."""
     from csv import reader
 
-    csv_consumption, csv_cost = [], []
+    csv_consumption, csv_cost, csv_user_data = [], [], []
     with open(file_path, 'r') as file:
         csv = reader(file)
+        # Get input consumption and cost data from csv
         next(csv)
-        for row in csv:
+        for row in csv[:12]:
             csv_consumption.append(round(float(row[2])))
             csv_cost.append(round(float(row[3])))
+        # Get input user data from csv
+        next(csv)
+        for row in csv[:3]:
+            csv_user_data.append(row[2])
 
     return InputData(
-        consumption=csv_consumption,
-        cost=csv_cost,
+        name=csv_user_data[0].replace(' ', '').replace('.', ''),
+        address=csv_user_data[1],
+        mod_kwh=_validate_mod_kwh(in_data=csv_user_data[2]),
+        consumption_monthly=csv_consumption,
+        consumption_annual=sum(csv_consumption),
+        cost_monthly=csv_cost,
+        cost_annual=sum(csv_cost),
         cost_per_kwh=_calculate_cost_per_kwh(cost=csv_cost, consumption=csv_consumption)
     )
 
 
-def input_xlsx(file_path: str) -> InputData:
+def input_xlsx(file_path: PathLike[str]) -> InputData:
     """Call this function to read a xlsx with specified format for monthly consumption."""
     from openpyxl import load_workbook
     sheet = load_workbook(file_path)['Sheet1']
 
-    xlsx_consumption, xlsx_cost = [], []
+    xlsx_consumption, xlsx_cost, xlsx_user_data = [], [], []
     for i in range(2, 14):
         xlsx_consumption.append(round(float((sheet[f'C{i}'].value))))
         xlsx_cost.append(round(float(sheet[f'D{i}'].value)))
 
+    for i in range(15, 18):
+        xlsx_user_data.append(sheet[f'C{i}'].value)
+
     return InputData(
-        consumption=xlsx_consumption,
-        cost=xlsx_cost,
+        name=xlsx_user_data[0].replace(' ', '').replace('.', ''),
+        address=xlsx_user_data[1],
+        mod_kwh=_validate_mod_kwh(in_data=xlsx_user_data[2]),
+        consumption_monthly=xlsx_consumption,
+        consumption_annual=sum(xlsx_consumption),
+        cost_monthly=xlsx_cost,
+        cost_annual=sum(xlsx_cost),
         cost_per_kwh=_calculate_cost_per_kwh(cost=xlsx_cost, consumption=xlsx_consumption)
     )
 
@@ -84,7 +115,7 @@ def input_sheets(sheet_id: str) -> InputData:
     import pickle
 
     scopes = ['https://www.googleapis.com/auth/spreadsheets']
-    sheet_ranges = ['C2:C13', 'D2:D13']
+    sheet_ranges = ['C2:C13', 'D2:D13', 'C15:C17']
     credentials = None
     if os_exists('./.creds/token.pickle'):
         with open('./.creds/token.pickle', 'rb') as token:
@@ -105,22 +136,30 @@ def input_sheets(sheet_id: str) -> InputData:
     sheet = service.spreadsheets()
     input_data = sheet.values().batchGet(spreadsheetId=sheet_id, ranges=sheet_ranges).execute()
 
+    user_vals = input_data.get('valueRanges')[2].get('values')
     cons_vals = input_data.get('valueRanges')[0].get('values')
     cost_vals = input_data.get('valueRanges')[1].get('values')
-
 
     sheets_consumption = [round(float(sublist[0])) for sublist in cons_vals]
     sheets_cost = [float(sublist[0]) for sublist in cost_vals]
 
     return InputData(
-        consumption=sheets_consumption,
-        cost=sheets_cost,
+        name=user_vals[0].replace(' ', '').replace('.', ''),
+        address=user_vals[1],
+        mod_kwh=_validate_mod_kwh(in_data=user_vals[2]),
+        consumption_monthly=sheets_consumption,
+        consumption_annual=sum(sheets_consumption),
+        cost_monthly=sheets_cost,
+        cost_annual=sum(sheets_cost),
         cost_per_kwh=_calculate_cost_per_kwh(cost=sheets_cost, consumption=sheets_consumption)
     )
 
 
 def input_manual() -> InputData:
     """Get monthly consumption via python input()"""
+    name = input("Please enter your name: ")
+    address = input("Please enter your address (format as <street address>, <zip code>: ")
+    mod_kwh = input("Please enter your solar modules capacity in kWh (enter 0.4 if you do not know): ")
 
     print("Please enter the monthly consumption and cost values for:")
 
@@ -131,11 +170,29 @@ def input_manual() -> InputData:
         manual_cost.append(round(float(input(f"\tCost {MONTHS_MAP[i]}: ")), 2))
 
     return InputData(
+        name=name.replace(' ', '').replace('.', ''),
+        address=address,
+        mod_kwh=_validate_mod_kwh(in_data=mod_kwh),
         consumption=manual_consumption,
         cost=manual_cost,
         cost_per_kwh=_calculate_cost_per_kwh(cost=manual_cost, consumption=manual_consumption)
     )
 
 
-if __name__ == "__main__":
-    print(input_xlsx(r'/Users/ryanwright-zinniger/Desktop/SolarCalculator/samples/sample_consumption.xlsx'))
+def input_handler(input_type: InputTypes, input_source: Any) -> InputData:
+    """Handler function for getting the input data based on input type."""
+
+    if input_type not in InputError.valid_input_types:
+        raise InputError(
+            f"The input '{input_type}' is invalid.\n"
+            + f"You must enter one of the following input types: {*InputError.valid_input_types,}"
+        )
+
+    if input_type == 'csv':
+        return input_csv(file_path=input_source)
+    if input_type == 'xlsx':
+        return input_xlsx(file_path=input_source)
+    if input_type == 'sheets':
+        return input_sheets(sheet_id=input_source)
+    if input_type == 'manual':
+        return input_manual()

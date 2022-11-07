@@ -1,4 +1,4 @@
-,Month,Consumption kWh,Cost
+,Month,Consumption (kWh),Cost ($)
 1,January,1490,130.23
 2,February,1236.55,101.34
 3,March,1664,145.6
@@ -11,3 +11,7 @@
 10,October,1771,125.62
 11,November,1678,120.54
 12,December,1713.23,135.34
+,,,
+,Name:,Ryan Zinniger,
+,Address:,"1417 Bath Street, 93101","Enter as <street address>, <zip code>"
+,Solar Module Capcity (kWh):,0.4,0.4 is default but can update if necessary

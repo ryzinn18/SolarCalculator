@@ -1,25 +1,30 @@
-# iridescence.py
+# solar_potential.py
 # This module gets the solar iridescence for a given address.
+"""
+get_irid_object()'s call may need to be wrapped in a requests.exceptions.JSONDecodeError try/except statement.
+Failed randomly with the above exception then worked the second time.
+"""
+from src.utils import ListMonthly
 from requests import get as r_get
-from typing import Dict, AnyStr, List
-from pydantic import BaseModel, conint, conlist, PositiveInt
-from utils import ListMonthly
+from typing import Dict, AnyStr
+from pydantic import BaseModel, PositiveInt
 
 NREL_TOKEN = 'pzWxBOpm2FFksn0T13JLdJCJWjdsDSEYUOSjWQFu'
 
 
 class SolarPotentialData(BaseModel):
-    # Mandatory
+    # Required
     address: str
     solar_potential_monthly: ListMonthly
     solar_potential_annual: PositiveInt
+    needed_kwh: PositiveInt
     # Default
     note = "Iridescence reported over a 30 year average."
     units_solar_potential = "kiloWattHours"
     sym_solar_potential = "kWh"
 
 
-def _get_params(capacity: PositiveInt, address: AnyStr,
+def _get_params(capacity: int, address: AnyStr,
                 azimuth="180", tilt="40", array_type="1", module_type="1", losses="10") -> Dict:
     """
     Get the parameters to be used to retrieve the iridescence info.
@@ -48,7 +53,7 @@ def _get_irid_obj(params: Dict) -> Dict:
     return request.json()['outputs']
 
 
-def _get_needed_kwh(consumption: PositiveInt, normal_annual: PositiveInt) -> PositiveInt:
+def _get_needed_kwh(consumption: int, normal_annual: int) -> int:
     """Quick Maths for needed kwh based on actual consumption and normalized consumption."""
     return round(consumption / normal_annual)
 
@@ -74,9 +79,6 @@ def get_solar_potential(address: AnyStr, annual_consumption: AnyStr) -> SolarPot
     return SolarPotentialData(
         address=address,
         solar_potential_monthly=[round(elem) for elem in actual_monthly],
-        solar_potential_annual=round(sum(actual_monthly))
+        solar_potential_annual=round(sum(actual_monthly)),
+        needed_kwh=needed_kwh
     )
-
-
-if __name__ == "__main__":
-    print(get_solar_potential("1417 Bath Street, 93101", "6575"))
