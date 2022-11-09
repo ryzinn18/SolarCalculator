@@ -11,7 +11,7 @@
 10,October,1771,125.62
 11,November,1678,120.54
 12,December,1713.23,135.34
-,,,
+-,-,-,-
 ,Name:,Ryan Zinniger,
 ,Address:,"1417 Bath Street, 93101","Enter as <street address>, <zip code>"
 ,Solar Module Capcity (kWh):,0.4,0.4 is default but can update if necessary

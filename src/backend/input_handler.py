@@ -1,15 +1,15 @@
 # input_handler.py
-from .utils import MONTHS_MAP, ListMonthly
+from backend.utils import MONTHS_MAP, ListMonthly
 from pydantic import BaseModel, PositiveFloat, confloat, ValidationError, PositiveInt
 from os import PathLike
-from typing import List, Literal, Any
+from typing import Literal, Any
 
 
 InputTypes = Literal['csv', 'xlsx', 'sheet', 'manual']
 
 
 class InputError(Exception):
-    """Error for an invalid Input"""
+    """Custom exception for an invalid Input keyword"""
     valid_input_types = ['csv', 'xlsx', 'sheet', 'manual']
 
 
@@ -32,7 +32,7 @@ class InputData(BaseModel):
     sym_cost = "$"
 
 
-def _calculate_cost_per_kwh(cost: List, consumption: List) -> PositiveFloat:
+def _calculate_cost_per_kwh(cost: ListMonthly, consumption: ListMonthly) -> PositiveFloat:
     """Calculate the average cost per kWh for inputs and add it to data object (dict)"""
     monthly_cost_per_kwh = [(cos/con) for cos, con in zip(cost, consumption)]
     return round(sum(monthly_cost_per_kwh) / len(monthly_cost_per_kwh), 2)
@@ -56,14 +56,18 @@ def input_csv(file_path: PathLike[str]) -> InputData:
     csv_consumption, csv_cost, csv_user_data = [], [], []
     with open(file_path, 'r') as file:
         csv = reader(file)
+
         # Get input consumption and cost data from csv
-        next(csv)
-        for row in csv[:12]:
+        data_rows = [row for i, row in enumerate(csv) if i in range(1, 13)]
+        for row in data_rows:
             csv_consumption.append(round(float(row[2])))
             csv_cost.append(round(float(row[3])))
+
+    with open(file_path, 'r') as file:
+        csv = reader(file)
         # Get input user data from csv
-        next(csv)
-        for row in csv[:3]:
+        data_rows = [row for i, row in enumerate(csv) if i in range(14, 17)]
+        for row in data_rows:
             csv_user_data.append(row[2])
 
     return InputData(
@@ -196,3 +200,10 @@ def input_handler(input_type: InputTypes, input_source: Any) -> InputData:
         return input_sheets(sheet_id=input_source)
     if input_type == 'manual':
         return input_manual()
+
+
+if __name__ == '__main__':
+    print(_calculate_cost_per_kwh(
+        cost=[130, 101, 146, 199, 179, 170, 220, 178, 131, 126, 121, 135],
+        consumption=[1490, 1237, 1664, 2294, 1938, 1829, 3212, 2641, 2194, 1771, 1678, 1713]
+    ))

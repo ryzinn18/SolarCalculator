@@ -4,7 +4,7 @@
 get_irid_object()'s call may need to be wrapped in a requests.exceptions.JSONDecodeError try/except statement.
 Failed randomly with the above exception then worked the second time.
 """
-from src.utils import ListMonthly
+from backend.utils import ListMonthly
 from requests import get as r_get
 from typing import Dict, AnyStr
 from pydantic import BaseModel, PositiveInt
