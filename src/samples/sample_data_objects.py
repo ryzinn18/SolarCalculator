@@ -32,6 +32,9 @@ SAMPLE_RESULTS = Results(
     solar_potential_data=SAMPLE_SOLAR_POTENTIAL_DATA
 )
 
+SAMPLE_SHEET = '1gneTmzTrGTsJIrjkjzEOYS-Bq7irB_WZ2TJWXMlFp4k'
+SAMPLE_CSV = r'./samples/sample_consumption.csv'
+SAMPLE_XLSX = r'./samples/sample_consumption.xlsx'
 SAMPLE_OUT_RELATIVE_PATH = PurePath(fr"./OutputGraphs/{SAMPLE_INPUT_DATA.name}-SolarGraph.png")
 
 if __name__ == '__main__':

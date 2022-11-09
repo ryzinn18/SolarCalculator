@@ -1,4 +1,6 @@
+# tests.test_input_handler.py
 from main import SAMPLE_CSV, SAMPLE_XLSX, SAMPLE_SHEET
+from samples.sample_data_objects import SAMPLE_INPUT_DATA
 from backend.input_handler import input_csv, input_xlsx, _calculate_cost_per_kwh, \
     _validate_mod_kwh, input_handler, InputError, InputData
 
@@ -10,12 +12,13 @@ def test__calculate_cost_per_kwh():
     WHEN _calculate_cost_per_kwh is called on 2 ListMonthly lists.
     THEN _calculate_cost_per_kwh() returns a positive float object.
     """
-    test_cost = [100, 200, 300, 400, 500, 400, 300, 200, 100, 200, 300, 200]
+    test_cost = SAMPLE_INPUT_DATA.cost_monthly
     test_consumption = test_cost
     # both test lists are the same so the result should be 1
     test_result = _calculate_cost_per_kwh(cost=test_cost, consumption=test_consumption)
-    assert test_result == 1
+
     assert isinstance(test_result, float)
+    assert test_result == 1
     assert test_result > 0
 
 
@@ -63,5 +66,3 @@ def test_inputs_handler():
 
     assert ['csv', 'xlsx', 'sheet', 'manual'] == InputError.valid_input_types
     assert 'wrong' not in InputError.valid_input_types
-
-

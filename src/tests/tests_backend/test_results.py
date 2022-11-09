@@ -1,4 +1,4 @@
-# tests.test_results.test_results.py
+# tests.test_results.py
 from backend.results import _get_graph, get_results, Results
 from samples.sample_data_objects import *
 from os.path import exists

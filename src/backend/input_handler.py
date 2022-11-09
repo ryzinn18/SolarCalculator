@@ -203,7 +203,7 @@ def input_handler(input_type: InputTypes, input_source: Any) -> InputData:
 
 
 if __name__ == '__main__':
-    print(_calculate_cost_per_kwh(
-        cost=[130, 101, 146, 199, 179, 170, 220, 178, 131, 126, 121, 135],
-        consumption=[1490, 1237, 1664, 2294, 1938, 1829, 3212, 2641, 2194, 1771, 1678, 1713]
-    ))
+    SAMPLE_CSV = r'./samples/sample_consumption.csv'
+    #print(input_handler(input_type='csv', input_source=SAMPLE_CSV))
+    from os import getcwd
+    print(getcwd())
