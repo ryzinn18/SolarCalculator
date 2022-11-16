@@ -1,7 +1,6 @@
 # backend.utils.py
-from pydantic import conlist, PositiveInt, BaseModel, ValidationError
-from os import PathLike
-from typing import Callable, Union
+from pydantic import conlist, PositiveInt, PositiveFloat
+from typing import Callable
 
 
 MONTHS_MAP = {
@@ -19,27 +18,29 @@ MONTHS_MAP = {
     12: "December"
 }
 
-ListMonthly = conlist(item_type=PositiveInt, min_items=12, max_items=12)
+IntListMonthly = conlist(item_type=PositiveInt, min_items=12, max_items=12)
+FloatListMonthly = conlist(item_type=PositiveFloat, min_items=12, max_items=12)
 
 
-def get_absolute_path(relative_path: PathLike[str]) -> PathLike[str]:
-    """Pass this function a relative path and get the absolute path based on cwd."""
-    from os import getcwd
-    from os.path import join
-    from pathlib import PurePath
+def validate_data(function: Callable) -> Callable:
+    """Decorator function for ensuring that a call to create a BaseModel object completes."""
+    def wrapper(*args, **kwargs):
+        try:
+            return function(*args, **kwargs)
 
-    root = getcwd()
-    dirs = ['backend', ]
+        except FileNotFoundError as e:
+            raise FileNotFoundError(
+                f"The file specified at the below location does not exist:\n"
+                + f"\t{e.filename}\n"
+                + "Please update the file path and try again."
+            )
+        except ValueError:
+            raise ValueError(
+                f"One or more of the values entered are invalid.\n"
+                + "Please review the values entered and try again."
+            )
 
-    return PurePath(join(getcwd(), relative_path))
-
-
-def validate_object_creation(function: Callable, **kwargs) -> Union[BaseModel, None]:
-    """"""
-    try:
-        return function(**kwargs)
-    except ValidationError:
-        return None
+    return wrapper
 
 
 if __name__ == '__main__':

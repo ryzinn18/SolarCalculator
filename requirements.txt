@@ -4,3 +4,5 @@ google~=3.0.0
 pydantic~=1.10.2
 matplotlib~=3.4.1
 utils~=1.0.1
+google_auth_oauthlib
+google

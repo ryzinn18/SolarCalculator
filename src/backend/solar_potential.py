@@ -4,7 +4,7 @@
 get_irid_object()'s call may need to be wrapped in a requests.exceptions.JSONDecodeError try/except statement.
 Failed randomly with the above exception then worked the second time.
 """
-from backend.utils import ListMonthly
+from backend.utils import IntListMonthly
 from requests import get as r_get
 from typing import Dict
 from pydantic import BaseModel, PositiveInt
@@ -13,11 +13,11 @@ from pydantic import BaseModel, PositiveInt
 class SolarPotentialData(BaseModel):
     # Required
     address: str
-    solar_potential_monthly: ListMonthly
+    solar_potential_monthly: IntListMonthly
     solar_potential_annual: PositiveInt
     needed_kwh: PositiveInt
     # Default
-    note = "Iridescence reported over a 30 year average."
+    note = "Solar potential reported over a 30 year average."
     units_solar_potential = "kiloWattHours"
     sym_solar_potential = "kWh"
 

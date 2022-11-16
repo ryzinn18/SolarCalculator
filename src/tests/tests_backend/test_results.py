@@ -1,5 +1,5 @@
 # tests.test_results.py
-from backend.results import _get_graph, get_results, Results
+from backend.results import create_solar_graph, get_results, Results
 from samples.sample_data_objects import *
 from os.path import exists
 from os import PathLike
@@ -11,7 +11,7 @@ def test__get_graph():
     WHEN _get_graph() is called with the above objects, it should generate a .png file at the specified path.
     THEN The Results object will be returned and Results.graph_path will exist.
     """
-    test_result = _get_graph(
+    test_result = create_solar_graph(
         input_data=SAMPLE_INPUT_DATA,
         solar_potential_data=SAMPLE_SOLAR_POTENTIAL_DATA,
         out_relative_path=SAMPLE_OUT_RELATIVE_PATH
