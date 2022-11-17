@@ -24,7 +24,7 @@ SAMPLE_SOLAR_POTENTIAL_DATA = SolarPotentialData(
     needed_kwh=4
 )
 
-SAMPLE_RESULTS = Results(
+"""SAMPLE_RESULTS = Results(
     name=SAMPLE_INPUT_DATA.name,
     address=SAMPLE_INPUT_DATA.address,
     potential_cost_monthly=[72.96, 64.79, 38.76, 23.18, 15.01, 20.33, 10.45, 12.92, 27.17, 33.44, 55.67, 71.25],
@@ -37,7 +37,7 @@ SAMPLE_RESULTS = Results(
     mod_quantity=15,
     input_data=SAMPLE_INPUT_DATA,
     solar_potential_data=SAMPLE_SOLAR_POTENTIAL_DATA
-)
+)"""
 
 SAMPLE_SHEET = '1gneTmzTrGTsJIrjkjzEOYS-Bq7irB_WZ2TJWXMlFp4k'
 SAMPLE_CSV = r'./samples/sample_consumption.csv'

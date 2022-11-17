@@ -17,7 +17,8 @@ class SolarPotentialData(BaseModel):
     solar_potential_annual: PositiveInt
     needed_kwh: PositiveInt
     # Default
-    note = "Solar potential reported over a 30 year average."
+    note = "Solar potential (kWh) reported over a 30 year average."
+    source = "pvwatts.nrel.gov/pvwatts.php"
     units_solar_potential = "kiloWattHours"
     sym_solar_potential = "kWh"
 
