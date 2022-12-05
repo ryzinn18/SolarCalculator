@@ -1,0 +1,23 @@
+{
+    "address": "1417 Bath Street, 93101",
+    "solar_potential_monthly": [
+        683,
+        641,
+        761,
+        780,
+        782,
+        694,
+        767,
+        811,
+        768,
+        768,
+        713,
+        647
+    ],
+    "solar_potential_annual": 8815,
+    "needed_kwh": 5,
+    "note": "Solar potential (kWh) reported over a 30 year average.",
+    "source": "pvwatts.nrel.gov/pvwatts.php",
+    "units_solar_potential": "kiloWattHours",
+    "sym_solar_potential": "kWh"
+}

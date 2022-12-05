@@ -1,0 +1,21 @@
+Name,RyanTest
+Address,"1417 Bath Street, 93101"
+Cost/kWh,0.19
+,
+Month,Consumption kWh,Cost $,Potential kWh,Potential Cost $,Savings $,Cost Reduction %
+January,820,155.8,683,26.03,129.77,83.29
+February,780,148.2,641,26.41,121.79,82.18
+March,760,144.4,761,-0.19,144.59,100.13
+April,740,140.6,780,-7.6,148.2,105.41
+May,740,140.6,782,-7.98,148.58,105.68
+June,710,134.9,694,3.04,131.86,97.75
+July,705,133.95,767,-11.78,145.73,108.79
+August,715,135.85,811,-18.24,154.09,113.43
+September,710,134.9,768,-11.02,145.92,108.17
+October,702,133.38,768,-12.54,145.92,109.4
+November,750,142.5,713,7.03,135.47,95.07
+December,780,148.2,647,25.27,122.93,82.95
+Annual,8912,1693.28,8815,18.430000000000003,1674.8500000000001,99.0
+,
+Note:,Solar potential (kWh) reported over a 30 year average.
+Potential kWh Source:,pvwatts.nrel.gov/pvwatts.php

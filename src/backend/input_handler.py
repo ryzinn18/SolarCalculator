@@ -115,6 +115,9 @@ def input_sheets(sheet_id: str) -> InputData:
     """
     Script from below for extracting data from google sheets.
     https://medium.com/analytics-vidhya/how-to-read-and-write-data-to-google-spreadsheet-using-python-ebf54d51a72c
+
+    Will throw error if you haven't run it in a day or two. Need to delete file 'tokens.pickle' from .creds folder then
+    rerun and authenticate at the url provided. Should figure out a way around this.
     """
     from googleapiclient.discovery import build
     from google_auth_oauthlib.flow import InstalledAppFlow
