@@ -13,9 +13,7 @@ ToDo (large):
     - Build APIs.
 - Package!
 """
-from backend.input_handler import input_handler
-from backend.solar_potential import get_solar_potential
-from backend.results import get_results, Results
+from backend import inputs as inp, solar_potential as sp, results as res
 from pathlib import PurePath
 
 SAMPLES = {
@@ -26,16 +24,16 @@ SAMPLES = {
 }
 
 
-def main() -> Results:
-    data_input = input_handler(
+def main() -> res.Results:
+    data_input = inp.input_handler(
         input_type='sheet',
         input_source=SAMPLES['sheet']
     )
-    data_solar_potential = get_solar_potential(
+    data_solar_potential = sp.get_solar_potential(
         address=data_input.address,
         annual_consumption=data_input.consumption_annual
     )
-    data_results = get_results(input_data=data_input, solar_potential_data=data_solar_potential)
+    data_results = res.get_results(input_data=data_input, solar_potential_data=data_solar_potential)
 
     return data_results
 

@@ -1,6 +1,6 @@
 from backend.utils import MONTHS_MAP, IntListMonthly, FloatListMonthly, get_root, AmbiguousListMonthly, PandasDataFrame
 from backend.solar_potential import SolarPotentialData
-from backend.input_handler import InputData
+from backend.inputs import InputData
 from csv import writer as csv_writer
 from os import PathLike
 from pathlib import PurePath

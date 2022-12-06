@@ -57,7 +57,7 @@ def get_solar_potential(address: str, annual_consumption: int) -> SolarPotential
     """
     ... WRITE THIS ...
     :param address: This is a string of the address. You need street number, street name, and zip code.
-    :param annual_consumption: This is the actual annual consumption. Generated from input_handler.py
+    :param annual_consumption: This is the actual annual consumption. Generated from inputs.py
     :return ... THIS TOO ...
     """
 

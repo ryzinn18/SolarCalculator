@@ -1,7 +1,7 @@
 # tests.test_input_handler.py
 from main import SAMPLE_CSV, SAMPLE_XLSX, SAMPLE_SHEET
 from samples.sample_data_objects import SAMPLE_INPUT_DATA
-from backend.input_handler import input_csv, input_xlsx, _calculate_cost_per_kwh, \
+from backend.inputs import input_csv, input_xlsx, _calculate_cost_per_kwh, \
     _validate_mod_kwh, input_handler, InputError, InputData
 
 

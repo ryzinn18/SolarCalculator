@@ -1,4 +1,4 @@
-# input_handler.py
+# ~src/backend/inputs.py
 from backend.utils import IntListMonthly, validate_data, FloatListMonthly
 from pydantic import BaseModel, PositiveFloat, ValidationError, PositiveInt
 from os import PathLike
@@ -184,5 +184,6 @@ def input_handler(input_type: InputTypes, input_source: Any) -> InputData:
 
 
 if __name__ == '__main__':
-    (input_handler('sheet', '1gneTmzTrGTsJIrjkjzEOYS-Bq7irB_WZ2TJWXMlFp4k'))
+    from main import SAMPLES
+    input_handler('csv', SAMPLES['csv'])
 
