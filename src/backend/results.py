@@ -1,4 +1,6 @@
-from backend.utils import MONTHS_MAP, IntListMonthly, FloatListMonthly, get_root, AmbiguousListMonthly, PandasDataFrame
+# ~/src/backend/results.py
+from backend.utils import MONTHS_MAP, IntListMonthly, FloatListMonthly, get_root, AmbiguousListMonthly, \
+    PandasDataFrame, LOGGER
 from backend.solar_potential import SolarPotentialData
 from backend.inputs import InputData
 from csv import writer as csv_writer
@@ -39,6 +41,7 @@ def create_comparison_graph(
         title: str, d1: DataFrame, d2: DataFrame, l1: str, l2: str, y_label: str,
         out_path: PathLike, graph_type: Literal['energy', 'cost']) -> None:
     """Creates a graph with 2 overlying plots for comparison."""
+    LOGGER.info(f'Creating the comparison graph titled: {title}')
 
     def _plot_bar(d: DataFrame, l: str, color: str) -> None:
         """Helper function to plot each bar-plot and set the label"""
@@ -85,25 +88,33 @@ def create_comparison_graph(
     # Save the figure
     plt.savefig(fname=out_path)
 
+    LOGGER.info(f'Graph created: {out_path}')
+
 
 def get_data_df(
         input_data: InputData, solar_potential_monthly: IntListMonthly, potential_cost_monthly: FloatListMonthly,
         savings_monthly: FloatListMonthly, cost_reduction_monthly: FloatListMonthly) -> DataFrame:
     """Creates a pandas data from with all the input, solar, and analysis data."""
-    return DataFrame(
-        data={'Month': list(MONTHS_MAP.values()) + ['Annual'],
-              'Consumption kWh': input_data.consumption_monthly + [input_data.consumption_annual],
-              'Cost $': input_data.cost_monthly + [input_data.cost_annual],
-              'Potential kWh': solar_potential_monthly + [sum(solar_potential_monthly)],
-              'Potential Cost $': potential_cost_monthly + [sum(potential_cost_monthly)],
-              'Savings $': savings_monthly + [sum(savings_monthly)],
-              'Cost Reduction %': cost_reduction_monthly + [_average(cost_reduction_monthly)]},
-    )
+    LOGGER.info('Creating DataFrame of core data')
+    result = DataFrame(data={
+        'Month': list(MONTHS_MAP.values()) + ['Annual'],
+        'Consumption kWh': input_data.consumption_monthly + [input_data.consumption_annual],
+        'Cost $': input_data.cost_monthly + [input_data.cost_annual],
+        'Potential kWh': solar_potential_monthly + [sum(solar_potential_monthly)],
+        'Potential Cost $': potential_cost_monthly + [sum(potential_cost_monthly)],
+        'Savings $': savings_monthly + [sum(savings_monthly)],
+        'Cost Reduction %': cost_reduction_monthly + [_average(cost_reduction_monthly)]
+        })
+
+    LOGGER.info('DataFrame successfully created')
+    return result
 
 
 def create_out_csv(header: dict, data_df: DataFrame, footer: dict,
                    out_relative_path: PathLike[str]) -> None:
     """Creates the output csv at the relative path passed."""
+    LOGGER.info('Creating output csv')
+
     def _write_dict(to_write: dict) -> None:
         """Helper to iterate through a dict and write its items to csv."""
         for key, val in to_write.items():
@@ -118,11 +129,12 @@ def create_out_csv(header: dict, data_df: DataFrame, footer: dict,
 
         _write_dict(to_write=footer)
 
+    LOGGER.info(f'Output csv successfully created: {out_relative_path}')
+
 
 def get_results(input_data: InputData, solar_potential_data: SolarPotentialData) -> Results:
     """Get graph, calculate your savings and mod quantity, and return your data objects."""
-
-    PARENT_PATH = get_root(parent_name='SolarCalculator')
+    LOGGER.info(f'Generating ResultsData for name: {input_data.name}')
 
     def _helper_calculate(func: Callable, zipped: tuple, arg3=None) -> FloatListMonthly:
         """Helper to clean up calculations for different monthly and annual figures."""
@@ -133,9 +145,10 @@ def get_results(input_data: InputData, solar_potential_data: SolarPotentialData)
         return out
 
     # Define out paths
-    path_energy_graph = PurePath(fr"{PARENT_PATH}/OutputGraphs/{input_data.name}-EnergyGraph.png")
-    path_cost_graph = PurePath(fr"{PARENT_PATH}/OutputGraphs/{input_data.name}-CostGraph.png")
-    path_out_csv = PurePath(fr"{PARENT_PATH}/OutputDataFiles/{input_data.name}-OutputData.csv")
+    root_path = get_root(root_name='SolarCalculator')
+    path_energy_graph = PurePath(fr"{root_path}/OutputGraphs/{input_data.name}-EnergyGraph.png")
+    path_cost_graph = PurePath(fr"{root_path}/OutputGraphs/{input_data.name}-CostGraph.png")
+    path_out_csv = PurePath(fr"{root_path}/OutputDataFiles/{input_data.name}-OutputData.csv")
 
     # Calculate Potential Cost, Savings, and Cost Reduction
     potential_cost_monthly = _helper_calculate(
@@ -191,7 +204,7 @@ def get_results(input_data: InputData, solar_potential_data: SolarPotentialData)
         out_relative_path=path_out_csv
     )
 
-    return Results(
+    result = Results(
         name=input_data.name,
         address=input_data.address,
         actual_consumption_monthly=input_data.consumption_monthly,
@@ -208,6 +221,9 @@ def get_results(input_data: InputData, solar_potential_data: SolarPotentialData)
         input_data=input_data,
         solar_potential_data=solar_potential_data
     )
+
+    LOGGER.info(f'ResultsData successfully created and validated for name: {input_data.name}')
+    return result
 
 
 if __name__ == '__main__':

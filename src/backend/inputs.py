@@ -1,6 +1,6 @@
 # ~src/backend/inputs.py
-from backend.utils import IntListMonthly, validate_data, FloatListMonthly
-from pydantic import BaseModel, PositiveFloat, ValidationError, PositiveInt
+from backend.utils import IntListMonthly, validate_data, FloatListMonthly, LOGGER
+from pydantic import BaseModel, PositiveFloat, PositiveInt
 from os import PathLike
 from typing import Literal, Any
 
@@ -26,7 +26,6 @@ class InputData(BaseModel):
     # Optional
     note: str = None
     # Default
-    source = "Potential solar data sourced from pvwatts.nrel.gov"
     units_consumption = "kiloWattHours"
     units_cost = "Dollars"
     sym_consumption = "kWh"
@@ -41,12 +40,23 @@ def _calculate_cost_per_kwh(cost: IntListMonthly, consumption: IntListMonthly) -
 
 def _validate_mod_kwh(in_data: str) -> float:
     """Helper function to validate that the data passed is a float."""
+    LOGGER.info(f'Validating {in_data} for the mod kWh value')
+    # Validate the value passed is numerical.
     try:
-        return float(in_data)
+        result = float(in_data)
     except ValueError:
-        raise ValidationError(
-            "The value entered for solar module capacity is invalid."
-            + "This must be a decimal between 0 and 1."
+        LOGGER.exception(f'The value {in_data} is invalid (not a decimal between 0 and 1) for mod kWh', exc_info=True)
+        raise ValueError(
+            "The value entered for solar module capacity must be numerical."
+        )
+    # Validate the value is greater than 0 and less than 1.5 and is invalid
+    if 0 < result < 1.5:
+        LOGGER.info(f'The value {result} is valid for mod kWh')
+        return result
+    else:
+        LOGGER.exception(f'The value {result} is not between 0 and 1.5 and is invalid')
+        raise ValueError(
+            "The value provided is is not greater than 0 and less than 1.5 and is invalid."
         )
 
 
@@ -55,6 +65,7 @@ def input_csv(file_path: PathLike[str]) -> InputData:
     """Call this function to read a csv with specified format for monthly consumption."""
     from csv import reader
 
+    LOGGER.info(f'Collecting input data from csv at following location: {file_path}')
     csv_consumption, csv_cost, csv_user_data = [], [], []
     with open(file_path, 'r') as file:
         csv = reader(file)
@@ -72,7 +83,7 @@ def input_csv(file_path: PathLike[str]) -> InputData:
         for row in data_rows:
             csv_user_data.append(row[2])
 
-    return InputData(
+    result = InputData(
         name=csv_user_data[0].replace(' ', '').replace('.', ''),
         address=csv_user_data[1],
         mod_kwh=_validate_mod_kwh(in_data=csv_user_data[2]),
@@ -83,22 +94,27 @@ def input_csv(file_path: PathLike[str]) -> InputData:
         cost_per_kwh=_calculate_cost_per_kwh(cost=csv_cost, consumption=csv_consumption)
     )
 
+    LOGGER.info(f'InputData successfully collected from csv: {file_path}')
+    return result
+
 
 @validate_data
 def input_xlsx(file_path: PathLike[str]) -> InputData:
     """Call this function to read a xlsx with specified format for monthly consumption."""
     from openpyxl import load_workbook
+
+    LOGGER.info(f'Collecting input data from xlsx at following location: {file_path}')
     sheet = load_workbook(file_path)['Sheet1']
 
     xlsx_consumption, xlsx_cost, xlsx_user_data = [], [], []
     for i in range(2, 14):
-        xlsx_consumption.append(round(float((sheet[f'C{i}'].value))))
+        xlsx_consumption.append(round(float(sheet[f'C{i}'].value)))
         xlsx_cost.append(round(float(sheet[f'D{i}'].value), 2))
 
     for i in range(15, 18):
         xlsx_user_data.append(sheet[f'C{i}'].value)
 
-    return InputData(
+    result = InputData(
         name=xlsx_user_data[0].replace(' ', '').replace('.', ''),
         address=xlsx_user_data[1],
         mod_kwh=_validate_mod_kwh(in_data=xlsx_user_data[2]),
@@ -108,6 +124,8 @@ def input_xlsx(file_path: PathLike[str]) -> InputData:
         cost_annual=round(sum(xlsx_cost), 2),
         cost_per_kwh=_calculate_cost_per_kwh(cost=xlsx_cost, consumption=xlsx_consumption)
     )
+    LOGGER.info(f'InputData successfully collected from xlsx: {file_path}')
+    return result
 
 
 @validate_data
@@ -125,6 +143,7 @@ def input_sheets(sheet_id: str) -> InputData:
     from os.path import exists as os_exists
     import pickle
 
+    LOGGER.info(f'Collecting input data from the Google Sheet with the following sheet id: {sheet_id}')
     scopes = ['https://www.googleapis.com/auth/spreadsheets']
     sheet_ranges = ['C2:C13', 'D2:D13', 'C15:C17']
     credentials = None
@@ -146,15 +165,16 @@ def input_sheets(sheet_id: str) -> InputData:
     # Call the Sheets API
     sheet = service.spreadsheets()
     input_data = sheet.values().batchGet(spreadsheetId=sheet_id, ranges=sheet_ranges).execute()
-
+    # Get sheets values
     user_vals = input_data.get('valueRanges')[2].get('values')
     cons_vals = input_data.get('valueRanges')[0].get('values')
     cost_vals = input_data.get('valueRanges')[1].get('values')
-
+    # Consolidate values
     sheets_consumption = [round(float(sublist[0]), 0) for sublist in cons_vals]
     sheets_cost = [round(float(sublist[0]), 2) for sublist in cost_vals]
 
-    return InputData(
+    # Validate values
+    result = InputData(
         name=user_vals[0][0].replace(' ', '').replace('.', ''),
         address=user_vals[1][0],
         mod_kwh=_validate_mod_kwh(in_data=user_vals[2][0]),
@@ -164,26 +184,35 @@ def input_sheets(sheet_id: str) -> InputData:
         cost_annual=round(sum(sheets_cost), 2),
         cost_per_kwh=_calculate_cost_per_kwh(cost=sheets_cost, consumption=sheets_consumption)
     )
+    LOGGER.info(f'InputData successfully collected from Google Sheet: {sheet_id}')
+    return result
 
 
 def input_handler(input_type: InputTypes, input_source: Any) -> InputData:
     """Handler function for getting the input data based on input type."""
+    LOGGER.info(f'The input handler has been called for type {input_type}')
 
-    if input_type not in InputError.valid_input_types:
-        raise InputError(
-            f"The input '{input_type}' is invalid.\n"
-            + f"You must enter one of the following input types: {*InputError.valid_input_types,}"
-        )
-
-    if input_type == 'csv':
-        return input_csv(file_path=input_source)
-    if input_type == 'xlsx':
-        return input_xlsx(file_path=input_source)
-    if input_type == 'sheet':
-        return input_sheets(sheet_id=input_source)
+    try:
+        if input_type == 'csv':
+            result = input_csv(file_path=input_source)
+        elif input_type == 'xlsx':
+            result = input_xlsx(file_path=input_source)
+        elif input_type == 'sheet':
+            result = input_sheets(sheet_id=input_source)
+        else:
+            LOGGER.error(f'The input type passed is invalid: {input_type}')
+            raise InputError(
+                f"The input '{input_type}' is invalid.\n"
+                + f"You must enter one of the following input types: {*InputError.valid_input_types,}"
+            )
+    except Exception as e:
+        LOGGER.exception(e)
+        raise e
+    else:
+        LOGGER.info(f'InputData successfully received via {input_type} for {result.name}')
+        LOGGER.info(result)
+        return result
 
 
 if __name__ == '__main__':
-    from main import SAMPLES
-    input_handler('csv', SAMPLES['csv'])
-
+    pass

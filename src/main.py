@@ -13,7 +13,7 @@ ToDo (large):
     - Build APIs.
 - Package!
 """
-from backend import inputs as inp, solar_potential as sp, results as res
+from backend import inputs as inp, solar_potential as sp, results as res, LOGGER
 from pathlib import PurePath
 
 SAMPLES = {
@@ -25,19 +25,28 @@ SAMPLES = {
 
 
 def main() -> res.Results:
+    LOGGER.info('main() called.')
+
+    # Get Input data
     data_input = inp.input_handler(
         input_type='sheet',
         input_source=SAMPLES['sheet']
     )
+    LOGGER.info(f'InputData successfully received for name {data_input.name}')
+
+    # Get Solar Potential data
     data_solar_potential = sp.get_solar_potential(
         address=data_input.address,
         annual_consumption=data_input.consumption_annual
     )
-    data_results = res.get_results(input_data=data_input, solar_potential_data=data_solar_potential)
+    LOGGER.info(f'SolarPotentialData data successfully received for address {data_solar_potential.address}')
 
-    return data_results
+    """# Get Results data
+    data_results = res.get_results(input_data=data_input, solar_potential_data=data_solar_potential)
+    LOGGER.info(f'ResultsData successfully received for {data_results.name}')"""
+
+    #return data_input
 
 
 if __name__ == '__main__':
     main()
-
