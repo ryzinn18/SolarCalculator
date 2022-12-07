@@ -1,5 +1,6 @@
 # ~/src/backend/results.py
-from backend.utils import MONTHS_MAP, IntListMonthly, FloatListMonthly, get_root, AmbiguousListMonthly, \
+from utils import get_root
+from backend.utils import MONTHS_MAP, IntListMonthly, FloatListMonthly, AmbiguousListMonthly, \
     PandasDataFrame, LOGGER
 from backend.solar_potential import SolarPotentialData
 from backend.inputs import InputData

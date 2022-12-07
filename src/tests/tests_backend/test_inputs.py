@@ -1,9 +1,7 @@
-# tests.test_input_handler.py
-from main import SAMPLE_CSV, SAMPLE_XLSX, SAMPLE_SHEET
-from samples.sample_data_objects import SAMPLE_INPUT_DATA
+# tests.test_inputs.py
+from utils import import_json, SAMPLES
 from backend.inputs import input_csv, input_xlsx, _calculate_cost_per_kwh, \
     _validate_mod_kwh, input_handler, InputError, InputData
-
 
 def test__calculate_cost_per_kwh():
     """
@@ -12,10 +10,22 @@ def test__calculate_cost_per_kwh():
     WHEN _calculate_cost_per_kwh is called on 2 ListMonthly lists.
     THEN _calculate_cost_per_kwh() returns a positive float object.
     """
-    test_cost = SAMPLE_INPUT_DATA.cost_monthly
-    test_consumption = test_cost
+    json_invalid_value = import_json(SAMPLES['input_invalid_value'])
+    json_invalid_type = import_json(SAMPLES['input_invalid_type'])
+
+    cost_invalid_value = json_invalid_value['cost_monthly']
+    cost_invalid_type = json_invalid_type['cost_monthly']
+
+    """
+    Need to test that:
+    - Fails correctly based on values and types
+        - String instead of numeric
+        - Negative when should be positive
+    - Calculates correctly when valid values given
+    """
+
     # both test lists are the same so the result should be 1
-    test_result = _calculate_cost_per_kwh(cost=test_cost, consumption=test_consumption)
+    test_result_value = _calculate_cost_per_kwh(cost=invalid_cost, consumption=test_consumption)
 
     assert isinstance(test_result, float)
     assert test_result == 1

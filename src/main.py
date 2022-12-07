@@ -13,15 +13,8 @@ ToDo (large):
     - Build APIs.
 - Package!
 """
+from utils import SAMPLES
 from backend import inputs as inp, solar_potential as sp, results as res, LOGGER
-from pathlib import PurePath
-
-SAMPLES = {
-    'sheet': '1gneTmzTrGTsJIrjkjzEOYS-Bq7irB_WZ2TJWXMlFp4k',
-    'csv': r'./samples/sample_consumption.csv',
-    'xlsx': r'./samples/sample_consumption.xlsx',
-    'out': PurePath(fr"./OutputGraphs/RyanZinniger-SolarGraph.png"),
-}
 
 
 def main() -> res.Results:

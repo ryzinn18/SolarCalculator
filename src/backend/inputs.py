@@ -1,8 +1,8 @@
 # ~src/backend/inputs.py
-from backend.utils import IntListMonthly, validate_data, FloatListMonthly, LOGGER
+from backend.utils import IntListMonthly, FloatListMonthly, LOGGER
 from pydantic import BaseModel, PositiveFloat, PositiveInt
 from os import PathLike
-from typing import Literal, Any
+from typing import Literal, Any, Callable
 
 
 InputTypes = Literal['csv', 'xlsx', 'sheet']
@@ -32,6 +32,35 @@ class InputData(BaseModel):
     sym_cost = "$"
 
 
+def validate(function: Callable) -> Callable:
+    """Decorator function for handling exceptions and logging for the input functions."""
+
+    def wrapper_validate(*args, **kwargs):
+        LOGGER.info('Validating input data.')
+        try:
+            result = function(*args, **kwargs)
+        except FileNotFoundError as e:
+            LOGGER.error(f'The file specified does not exist.', exc_info=True)
+            raise FileNotFoundError(
+                f"The file specified at the below location does not exist:\n"
+                + f"\t{e.filename}\n"
+            )
+        except ValueError:
+            LOGGER.error(f'The input data could not be validated.', exc_info=True)
+            raise ValueError(
+                f"One or more of the values entered are invalid.\n"
+                + "Please review the values entered and try again."
+            )
+        except Exception as e:
+            LOGGER.error(e, exc_info=True)
+            raise e
+        else:
+            LOGGER.info('Input data successfully validated.')
+            return result
+
+    return wrapper_validate
+
+
 def _calculate_cost_per_kwh(cost: IntListMonthly, consumption: IntListMonthly) -> PositiveFloat:
     """Calculate the average cost per kWh for inputs and add it to data object (dict)"""
     monthly_cost_per_kwh = [(cos/con) for cos, con in zip(cost, consumption)]
@@ -41,11 +70,12 @@ def _calculate_cost_per_kwh(cost: IntListMonthly, consumption: IntListMonthly) -
 def _validate_mod_kwh(in_data: str) -> float:
     """Helper function to validate that the data passed is a float."""
     LOGGER.info(f'Validating {in_data} for the mod kWh value')
+
     # Validate the value passed is numerical.
     try:
         result = float(in_data)
     except ValueError:
-        LOGGER.exception(f'The value {in_data} is invalid (not a decimal between 0 and 1) for mod kWh', exc_info=True)
+        LOGGER.error(f'The value {in_data} is invalid (not a decimal between 0 and 1) for mod kWh', exc_info=True)
         raise ValueError(
             "The value entered for solar module capacity must be numerical."
         )
@@ -60,7 +90,7 @@ def _validate_mod_kwh(in_data: str) -> float:
         )
 
 
-@validate_data
+@validate
 def input_csv(file_path: PathLike[str]) -> InputData:
     """Call this function to read a csv with specified format for monthly consumption."""
     from csv import reader
@@ -98,7 +128,7 @@ def input_csv(file_path: PathLike[str]) -> InputData:
     return result
 
 
-@validate_data
+@validate
 def input_xlsx(file_path: PathLike[str]) -> InputData:
     """Call this function to read a xlsx with specified format for monthly consumption."""
     from openpyxl import load_workbook
@@ -128,7 +158,7 @@ def input_xlsx(file_path: PathLike[str]) -> InputData:
     return result
 
 
-@validate_data
+@validate
 def input_sheets(sheet_id: str) -> InputData:
     """
     Script from below for extracting data from google sheets.
