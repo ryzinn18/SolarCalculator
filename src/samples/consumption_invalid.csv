@@ -1,0 +1,17 @@
+,Month,Consumption kWh,Cost $
+1,January,fail,fail
+2,February,780,148.20
+3,March,760,144.40
+4,April,740,140.60
+5,May,740,140.60
+6,June,710,134.90
+7,July,705,133.95
+8,August,715,135.85
+9,September,710,134.90
+10,October,702,133.38
+11,November,750,142.50
+12,December,780,148.20
+-,-,-,-
+,Name:,Ryan Zinniger,
+,Address:,"1417 Bath Street, 93101",
+,Solar Module Capcity kWh:,0.4,0.4 is default but can update if necessary
