@@ -90,7 +90,7 @@ def test_create_out_csv():
                     'Potential kWh Source:': 'test_source'},
             out_relative_path=tmp_file_path
         )
-        assert tmp_file_path
+        assert isfile(tmp_file_path)
 
 
 def test_get_results():

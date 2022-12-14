@@ -6,9 +6,9 @@ from typing import Literal, Callable
 InputTypes = Literal['csv', 'xlsx', 'sheet']
 
 
-# class InputError(Exception):
-#     """Custom exception for an invalid Input keyword"""
-#     valid_input_types = ['csv', 'xlsx', 'sheet']
+class InputError(Exception):
+    """Custom exception for an invalid Input keyword"""
+    valid_input_types = ['csv', 'xlsx', 'sheet']
 
 
 class InputData(BaseModel):
@@ -34,6 +34,7 @@ def validate(function: Callable) -> Callable:
     """Decorator function for handling exceptions and logging for the input functions."""
 
     def wrapper_validate(*args, **kwargs):
+        """Wraps function call in a try/except clause to catch FileNotFound, ValueError and general Exceptions"""
         LOGGER.info('Validating input data.')
         try:
             result = function(*args, **kwargs)
@@ -60,14 +61,21 @@ def validate(function: Callable) -> Callable:
 
 
 def _validate_mod_kwh(in_data: str) -> float:
-    """Helper function to validate that the data passed is a float."""
+    """
+    Helper function to validate that the data passed can be converted to a float and is between 0 and 1.5.
+
+    :param in_data: A string that should be able to be converted to a float.
+    :return the float value if a valid input given.
+    :raise ValueError if in_data cannot be converted to a float or the float value is not between 0 and 1.5.
+    """
+
     LOGGER.info(f'Validating {in_data} for the mod kWh value')
 
     # Validate the value passed is numerical.
     try:
         result = float(in_data)
     except ValueError:
-        LOGGER.error(f'The value {in_data} is invalid (not a decimal between 0 and 1) for mod kWh', exc_info=True)
+        LOGGER.exception(f'The value {in_data} is invalid (not a decimal between 0 and 1) for mod kWh', exc_info=True)
         raise ValueError(
             "The value entered for solar module capacity must be numerical."
         )
@@ -83,43 +91,54 @@ def _validate_mod_kwh(in_data: str) -> float:
 
 
 def _calculate_cost_per_kwh(cost: IntListMonthly, consumption: IntListMonthly) -> PositiveFloat:
-    """Calculate the average cost per kWh for inputs and add it to data object (dict)"""
-    monthly_cost_per_kwh = [(cos / con) for cos, con in zip(cost, consumption)]
+    """Return the average cost per kWh for a year's inputs"""
+
+    # Get a list of the cost/kWh for each month
+    monthly_cost_per_kwh = [(cos / kwh) for cos, kwh in zip(cost, consumption)]
+    # Calculate and return the average cost/kWh for the year
     return round(sum(monthly_cost_per_kwh) / len(monthly_cost_per_kwh), 2)
 
 
 @validate
 def input_csv(file_path: str) -> InputData:
-    """Call this function to read a csv with specified format for monthly consumption."""
+    """Read a csv at specified path and return InputData model."""
+
     from csv import reader
 
     LOGGER.info(f'Collecting input data from csv at following location: {file_path}')
-    csv_consumption, csv_cost, csv_user_data = [], [], []
-    with open(file_path, 'r') as file:
-        csv = reader(file)
 
-        # Get input consumption and cost data from csv
-        data_rows = [row for i, row in enumerate(csv) if i in range(1, 13)]
-        for row in data_rows:
-            csv_consumption.append(round(float(row[2])))
-            csv_cost.append(round(float(row[3]), 2))
+    def _read_data(r_min: int, r_max: int, column: int, convert: bool, round_to: int = None) -> list:
+        """Read data from input csv based on range min and max values. Converts str to float if specified."""
 
-    with open(file_path, 'r') as file:
-        csv = reader(file)
-        # Get input user data from csv
-        data_rows = [row for i, row in enumerate(csv) if i in range(14, 17)]
-        for row in data_rows:
-            csv_user_data.append(row[2])
+        # Create output list
+        output = []
+        # Open the file in the context manager
+        with open(file_path, 'r') as file:
+            csv = reader(file)
+            # Get input consumption and cost data from csv
+            data_rows = [row for i, row in enumerate(csv) if i in range(r_min, r_max)]
+            # Write the data in the column specified to the output list
+            for row in data_rows:
+                output.append(row[column])
 
+        # Convert values to floats and round them if convert is True, else return the output as is
+        return [round(float(val), round_to) for val in output] if convert else output
+
+    # Get data from input csv file
+    consumption = _read_data(r_min=1, r_max=13, column=2, convert=True, round_to=0)
+    cost = _read_data(r_min=1, r_max=13, column=3, convert=True, round_to=2)
+    user_data = _read_data(r_min=14, r_max=17, column=2, convert=False)
+
+    # Instantiate InputData model
     result = InputData(
-        name=csv_user_data[0].replace(' ', '').replace('.', ''),
-        address=csv_user_data[1],
-        mod_kwh=_validate_mod_kwh(in_data=csv_user_data[2]),
-        consumption_monthly=csv_consumption,
-        consumption_annual=sum(csv_consumption),
-        cost_monthly=csv_cost,
-        cost_annual=round(sum(csv_cost), 2),
-        cost_per_kwh=_calculate_cost_per_kwh(cost=csv_cost, consumption=csv_consumption)
+        name=user_data[0].replace(' ', '').replace('.', ''),
+        address=user_data[1],
+        mod_kwh=_validate_mod_kwh(in_data=user_data[2]),
+        consumption_monthly=consumption,
+        consumption_annual=sum(consumption),
+        cost_monthly=cost,
+        cost_annual=round(sum(cost), 2),
+        cost_per_kwh=_calculate_cost_per_kwh(cost=cost, consumption=consumption)
     )
 
     LOGGER.info(f'InputData successfully collected from csv: {file_path}')
@@ -128,30 +147,43 @@ def input_csv(file_path: str) -> InputData:
 
 @validate
 def input_xlsx(file_path: str) -> InputData:
-    """Call this function to read a xlsx with specified format for monthly consumption."""
+    """Read a xlsx at specified path and return InputData model."""
+
     from openpyxl import load_workbook
 
     LOGGER.info(f'Collecting input data from xlsx at following location: {file_path}')
+
+    def _read_data(r_min: int, r_max: int, column: str, convert: bool, round_to: int = None) -> list:
+        """Read data from input xlsx based on range min and max values. Converts str to float if specified."""
+
+        # Create output list
+        output = []
+        for i in range(r_min, r_max):
+            output.append(sheet[f'{column}{i}'].value)
+
+        # Convert values to floats and round them if convert is True, else return the output as is
+        return [round(float(val), round_to) for val in output] if convert else output
+
+    # Create sheet object from load_workbook
     sheet = load_workbook(file_path)['Sheet1']
 
-    xlsx_consumption, xlsx_cost, xlsx_user_data = [], [], []
-    for i in range(2, 14):
-        xlsx_consumption.append(round(float(sheet[f'C{i}'].value)))
-        xlsx_cost.append(round(float(sheet[f'D{i}'].value), 2))
+    # Get data from input xlsx file
+    consumption = _read_data(r_min=2, r_max=14, column='C', convert=True, round_to=0)
+    cost = _read_data(r_min=2, r_max=14, column='D', convert=True, round_to=2)
+    user_data = _read_data(r_min=15, r_max=18, column='C', convert=False)
 
-    for i in range(15, 18):
-        xlsx_user_data.append(sheet[f'C{i}'].value)
-
+    # Instantiate InputData model
     result = InputData(
-        name=xlsx_user_data[0].replace(' ', '').replace('.', ''),
-        address=xlsx_user_data[1],
-        mod_kwh=_validate_mod_kwh(in_data=xlsx_user_data[2]),
-        consumption_monthly=xlsx_consumption,
-        consumption_annual=sum(xlsx_consumption),
-        cost_monthly=xlsx_cost,
-        cost_annual=round(sum(xlsx_cost), 2),
-        cost_per_kwh=_calculate_cost_per_kwh(cost=xlsx_cost, consumption=xlsx_consumption)
+        name=user_data[0].replace(' ', '').replace('.', ''),
+        address=user_data[1],
+        mod_kwh=_validate_mod_kwh(in_data=user_data[2]),
+        consumption_monthly=consumption,
+        consumption_annual=sum(consumption),
+        cost_monthly=cost,
+        cost_annual=round(sum(cost), 2),
+        cost_per_kwh=_calculate_cost_per_kwh(cost=cost, consumption=consumption)
     )
+
     LOGGER.info(f'InputData successfully collected from xlsx: {file_path}')
     return result
 
@@ -159,7 +191,7 @@ def input_xlsx(file_path: str) -> InputData:
 @validate
 def input_sheets(sheet_id: str) -> InputData:
     """
-    Script from below for extracting data from google sheets.
+    _authenticate_google_api_token() script from below and updated slightly by me.
     https://medium.com/analytics-vidhya/how-to-read-and-write-data-to-google-spreadsheet-using-python-ebf54d51a72c
 
     Will redirect to a google authenticate page if you have not run in a while and ask you to manually authenticate.
@@ -177,9 +209,9 @@ def input_sheets(sheet_id: str) -> InputData:
 
     scopes = ['https://www.googleapis.com/auth/spreadsheets']
 
-    # Authenticate and access sheet
     def _authenticate_google_api_token() -> Resource:
         """Helper function to authenticate a google sheets api token"""
+
         LOGGER.info('Attempting to authenticate the google sheets api')
 
         # 1. set credentials to None
@@ -216,58 +248,66 @@ def input_sheets(sheet_id: str) -> InputData:
         LOGGER.info('Successfully authenticated the google sheets api')
         return build('sheets', 'v4', credentials=credentials)
 
+    def _read_data(column: int, convert: bool, round_to: int = None) -> list:
+        """Read data from input google sheet. Converts str to float if specified."""
+
+        # Get data from specified column
+        output = input_data.get('valueRanges')[column].get('values')
+        # Convert values to floats and round them if convert is True, else return the output as is
+        return [round(float(sublist[0]), round_to) for sublist in output] if convert else output
+
+    # Call the Sheets API and get raw data
     sheet_ranges = ['C2:C13', 'D2:D13', 'C15:C17']
-    # Call the Sheets API
     service = _authenticate_google_api_token()
     sheet = service.spreadsheets()
     input_data = sheet.values().batchGet(spreadsheetId=sheet_id, ranges=sheet_ranges).execute()
-    # Get sheets values
-    user_vals = input_data.get('valueRanges')[2].get('values')
-    cons_vals = input_data.get('valueRanges')[0].get('values')
-    cost_vals = input_data.get('valueRanges')[1].get('values')
-    # Consolidate values
-    sheets_consumption = [round(float(sublist[0]), 0) for sublist in cons_vals]
-    sheets_cost = [round(float(sublist[0]), 2) for sublist in cost_vals]
 
-    # Validate values
+    # Get data from input google sheet
+    user_data = _read_data(column=2, convert=False)
+    consumption = _read_data(column=0, convert=True, round_to=0)
+    cost = _read_data(column=1, convert=True, round_to=2)
+
+    # Instantiate InputData model
     result = InputData(
-        name=user_vals[0][0].replace(' ', '').replace('.', ''),
-        address=user_vals[1][0],
-        mod_kwh=_validate_mod_kwh(in_data=user_vals[2][0]),
-        consumption_monthly=sheets_consumption,
-        consumption_annual=sum(sheets_consumption),
-        cost_monthly=sheets_cost,
-        cost_annual=round(sum(sheets_cost), 2),
-        cost_per_kwh=_calculate_cost_per_kwh(cost=sheets_cost, consumption=sheets_consumption)
+        name=user_data[0][0].replace(' ', '').replace('.', ''),
+        address=user_data[1][0],
+        mod_kwh=_validate_mod_kwh(in_data=user_data[2][0]),
+        consumption_monthly=consumption,
+        consumption_annual=sum(consumption),
+        cost_monthly=cost,
+        cost_annual=round(sum(cost), 2),
+        cost_per_kwh=_calculate_cost_per_kwh(cost=cost, consumption=consumption)
     )
+
     LOGGER.info(f'InputData successfully collected from Google Sheet: {sheet_id}')
     return result
 
 
 def input_handler(input_type: InputTypes, input_source: str) -> InputData:
-    """Handler function for getting the input data based on input type."""
+    """Handler function. Calls correct input function or raises an InputError. Will catch, log and raise Exceptions."""
+
     LOGGER.info(f'The input handler has been called for type {input_type}')
 
     try:
         if input_type == 'csv':
-            result = input_csv(file_path=input_source)
+            input_data = input_csv(file_path=input_source)
         elif input_type == 'xlsx':
-            result = input_xlsx(file_path=input_source)
+            input_data = input_xlsx(file_path=input_source)
         elif input_type == 'sheet':
-            result = input_sheets(sheet_id=input_source)
+            input_data = input_sheets(sheet_id=input_source)
         else:
             LOGGER.error(f'The input type passed is invalid: {input_type}')
-            raise ValueError(
+            raise InputError(
                 f"The input '{input_type}' is invalid.\n"
-                + f"You must enter one of the following input types: {InputTypes}"
+                + f"You must enter one of the following input types: {*InputError.valid_input_types,}"
             )
     except Exception as e:
         LOGGER.exception(e)
         raise e
     else:
-        LOGGER.info(f'InputData successfully received via {input_type} for {result.name}')
-        LOGGER.info(result)
-        return result
+        LOGGER.info(f'InputData successfully received via {input_type} for {input_data.name}')
+        LOGGER.info(input_data)
+        return input_data
 
 
 if __name__ == '__main__':

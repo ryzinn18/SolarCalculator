@@ -2,7 +2,7 @@
 from pytest import raises as p_raises
 from utils import import_json, SAMPLES
 from backend import input_csv, input_xlsx, input_sheets, \
-    input_handler, InputData
+    input_handler, InputData, InputError
 from backend.inputs import _validate_mod_kwh, _calculate_cost_per_kwh
 
 
@@ -24,21 +24,6 @@ def test_validate():
         input_csv(file_path=SAMPLES['csv_invalid'])
 
 
-def test__calculate_cost_per_kwh():
-    """
-    GIVEN ListMonthly (see backend/utils.py) lists for cost and consumption
-    WHEN _calculate_cost_per_kwh() is called on 2 ListMonthly lists the average cost/kWh is calculated
-    THEN _calculate_cost_per_kwh() returns a valid float object
-    """
-
-    assert _calculate_cost_per_kwh(
-                cost=_INPUT_VALID['cost_monthly'], consumption=_INPUT_VALID['consumption_monthly']
-            ) == _INPUT_VALID['cost_per_kwh']
-    assert _calculate_cost_per_kwh(
-                cost=_INPUT_INVALID['cost_monthly'], consumption=_INPUT_INVALID['consumption_monthly']
-            ) == _INPUT_VALID['cost_per_kwh']
-
-
 def test__validate_mod_kwh():
     """
     GIVEN A string representing users mod_kwh which can be converted to a float.
@@ -58,6 +43,21 @@ def test__validate_mod_kwh():
         _validate_mod_kwh(in_data='0')
     with p_raises(ValueError):
         _validate_mod_kwh(in_data='-1')
+
+
+def test__calculate_cost_per_kwh():
+    """
+    GIVEN ListMonthly (see backend/utils.py) lists for cost and consumption
+    WHEN _calculate_cost_per_kwh() is called on 2 ListMonthly lists the average cost/kWh is calculated
+    THEN _calculate_cost_per_kwh() returns a valid float object
+    """
+
+    assert _calculate_cost_per_kwh(
+                cost=_INPUT_VALID['cost_monthly'], consumption=_INPUT_VALID['consumption_monthly']
+            ) == _INPUT_VALID['cost_per_kwh']
+    assert _calculate_cost_per_kwh(
+                cost=_INPUT_INVALID['cost_monthly'], consumption=_INPUT_INVALID['consumption_monthly']
+            ) == _INPUT_VALID['cost_per_kwh']
 
 
 def test_input_csv():
@@ -122,8 +122,8 @@ def test_input_handler():
     assert isinstance(input_handler(input_type='xlsx', input_source=SAMPLES['xlsx_valid']), InputData)
     assert isinstance(input_handler(input_type='sheet', input_source=SAMPLES['sheet']), InputData)
     # Assert that the accepted input types are recognized
-    # assert ['csv', 'xlsx', 'sheet'] == InputError.valid_input_types
+    assert ['csv', 'xlsx', 'sheet'] == InputError.valid_input_types
     # Assert that InputError is passed when an invalid kw arg for input_type is passed.
-    with p_raises(ValueError):
+    with p_raises(InputError):
         input_handler(input_type='fail', input_source=SAMPLES['csv_valid'])
 
