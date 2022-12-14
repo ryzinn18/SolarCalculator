@@ -7,12 +7,19 @@ JSON = Union[Dict[str, Any], List[Any], int, str, float, bool, Type[None]]
 
 SAMPLES = {
     'sheet': '1gneTmzTrGTsJIrjkjzEOYS-Bq7irB_WZ2TJWXMlFp4k',
+
     'csv_valid': r'./samples/consumption_valid.csv',
+    'csv_invalid': r'./samples/consumption_invalid.csv',
+
     'xlsx_valid': r'./samples/consumption_valid.xlsx',
 
     'input_valid': r'./samples/input_valid.json',
     'input_invalid_type': r'./samples/input_invalid_type.json',
     'input_invalid_value': r'./samples/input_invalid_value.json',
+
+    'solar_potential_valid': './samples/solar_potential_valid.json',
+
+    'results_valid': r'./samples/results_valid.json',
 
     'out': PurePath(fr"./OutputGraphs/RyanZinniger-SolarGraph.png"),
 }
@@ -56,8 +63,8 @@ def import_json(path: str) -> dict:
     # Create the json object
     with open(path, 'r') as j:
         obj = j_load(j)
-        LOGGER.info(f'The following json file successfully imported: {path}')
 
+    LOGGER.info(f'The following json file successfully imported: {path}')
     return obj
 
 
@@ -75,10 +82,12 @@ def export_json(j_obj: JSON, target_directory: str, out_name: str) -> None:
             f'The following target_directory does not exist:\n\t{target_directory}'
         )
 
+    output = fr'{target_directory}/{out_name}.json'
     # Write the model passed to a .json at specified location
-    with open(fr'{target_directory}/{out_name}.json', 'w') as out:
+    with open(output, 'w') as out:
         out.write(j_obj)
-        LOGGER.info(f'The json file was successfully exported.')
+
+    LOGGER.info(f'The json file was successfully exported: {output}')
 
 
 def get_root(root_name: str) -> str:

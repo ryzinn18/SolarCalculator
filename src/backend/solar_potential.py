@@ -65,7 +65,7 @@ def _get_iridescence_obj(params: dict) -> dict:
 
 def get_solar_potential(address: str, annual_consumption: int) -> SolarPotentialData:
     """
-    Runs through steps to get solar potentail data for the address provided:
+    Runs through steps to get solar potential data for the address provided:
     1. Get normalized data:
         - Get params with capacity == 1 (normalized)
         - Get iridescence data for normal params

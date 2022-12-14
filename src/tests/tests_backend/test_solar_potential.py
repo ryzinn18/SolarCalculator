@@ -1,7 +1,10 @@
 # tests.test_solar_potential.py
+from utils import import_json, SAMPLES
 from backend.solar_potential import _get_params, _get_iridescence_obj, \
     get_solar_potential, SolarPotentialData
-from samples.sample_data_objects import SAMPLE_INPUT_DATA
+
+
+_INPUT_VALID = import_json(SAMPLES['input_valid'])
 
 
 def test__get_params():
@@ -10,11 +13,13 @@ def test__get_params():
     WHEN _get_params() is called.
     THEN A dictionary with 7 items - all of which are strings - is returned.
     """
-    test_params = _get_params(capacity=1, address=SAMPLE_INPUT_DATA.address)
+    test_params = _get_params(capacity=1, address=_INPUT_VALID['address'])
+
     assert isinstance(test_params, dict)
     assert len(test_params) == 7
-    for elem in test_params:
-        assert isinstance(elem, str)
+    for key, val in test_params.items():
+        assert isinstance(key, str)
+        assert isinstance(val, str)
 
 
 def test__get_iridescence_object():
@@ -23,7 +28,7 @@ def test__get_iridescence_object():
     WHEN Calling the api via the requests library.
     THEN Get a dictionary containing the response.
     """
-    test_params = _get_params(capacity=1, address=SAMPLE_INPUT_DATA.address)
+    test_params = _get_params(capacity=1, address=_INPUT_VALID['address'])
     test_irid_obj = _get_iridescence_obj(params=test_params)
 
     assert isinstance(test_irid_obj, dict)
@@ -39,8 +44,8 @@ def test_get_solar_potential():
     """
     assert isinstance(
         get_solar_potential(
-            address=SAMPLE_INPUT_DATA.address,
-            annual_consumption=SAMPLE_INPUT_DATA.consumption_annual
+            address=_INPUT_VALID['address'],
+            annual_consumption=_INPUT_VALID['consumption_annual']
         ),
         SolarPotentialData
     )

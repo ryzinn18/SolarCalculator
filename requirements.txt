@@ -7,3 +7,4 @@ utils~=1.0.1
 google_auth_oauthlib
 google
 pandas
+pytest

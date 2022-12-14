@@ -1,16 +1,14 @@
 # ~src/backend/inputs.py
 from backend.utils import IntListMonthly, FloatListMonthly, LOGGER
 from pydantic import BaseModel, PositiveFloat, PositiveInt
-from os import PathLike
-from typing import Literal, Any, Callable
-
+from typing import Literal, Callable
 
 InputTypes = Literal['csv', 'xlsx', 'sheet']
 
 
-class InputError(Exception):
-    """Custom exception for an invalid Input keyword"""
-    valid_input_types = ['csv', 'xlsx', 'sheet']
+# class InputError(Exception):
+#     """Custom exception for an invalid Input keyword"""
+#     valid_input_types = ['csv', 'xlsx', 'sheet']
 
 
 class InputData(BaseModel):
@@ -61,12 +59,6 @@ def validate(function: Callable) -> Callable:
     return wrapper_validate
 
 
-def _calculate_cost_per_kwh(cost: IntListMonthly, consumption: IntListMonthly) -> PositiveFloat:
-    """Calculate the average cost per kWh for inputs and add it to data object (dict)"""
-    monthly_cost_per_kwh = [(cos/con) for cos, con in zip(cost, consumption)]
-    return round(sum(monthly_cost_per_kwh) / len(monthly_cost_per_kwh), 2)
-
-
 def _validate_mod_kwh(in_data: str) -> float:
     """Helper function to validate that the data passed is a float."""
     LOGGER.info(f'Validating {in_data} for the mod kWh value')
@@ -80,7 +72,7 @@ def _validate_mod_kwh(in_data: str) -> float:
             "The value entered for solar module capacity must be numerical."
         )
     # Validate the value is greater than 0 and less than 1.5 and is invalid
-    if 0 < result < 1.5:
+    if 0 < result <= 1.5:
         LOGGER.info(f'The value {result} is valid for mod kWh')
         return result
     else:
@@ -90,8 +82,14 @@ def _validate_mod_kwh(in_data: str) -> float:
         )
 
 
+def _calculate_cost_per_kwh(cost: IntListMonthly, consumption: IntListMonthly) -> PositiveFloat:
+    """Calculate the average cost per kWh for inputs and add it to data object (dict)"""
+    monthly_cost_per_kwh = [(cos / con) for cos, con in zip(cost, consumption)]
+    return round(sum(monthly_cost_per_kwh) / len(monthly_cost_per_kwh), 2)
+
+
 @validate
-def input_csv(file_path: PathLike[str]) -> InputData:
+def input_csv(file_path: str) -> InputData:
     """Call this function to read a csv with specified format for monthly consumption."""
     from csv import reader
 
@@ -129,7 +127,7 @@ def input_csv(file_path: PathLike[str]) -> InputData:
 
 
 @validate
-def input_xlsx(file_path: PathLike[str]) -> InputData:
+def input_xlsx(file_path: str) -> InputData:
     """Call this function to read a xlsx with specified format for monthly consumption."""
     from openpyxl import load_workbook
 
@@ -164,35 +162,63 @@ def input_sheets(sheet_id: str) -> InputData:
     Script from below for extracting data from google sheets.
     https://medium.com/analytics-vidhya/how-to-read-and-write-data-to-google-spreadsheet-using-python-ebf54d51a72c
 
-    Will throw error if you haven't run it in a day or two. Need to delete file 'tokens.pickle' from .creds folder then
-    rerun and authenticate at the url provided. Should figure out a way around this.
+    Will redirect to a google authenticate page if you have not run in a while and ask you to manually authenticate.
+        Should find a way around this. Probably a permissions issue.
     """
-    from googleapiclient.discovery import build
+    from googleapiclient.discovery import build, Resource
     from google_auth_oauthlib.flow import InstalledAppFlow
     from google.auth.transport.requests import Request
+    from google.auth.exceptions import RefreshError
+    from os import remove as os_remove
     from os.path import exists as os_exists
     import pickle
 
     LOGGER.info(f'Collecting input data from the Google Sheet with the following sheet id: {sheet_id}')
+
     scopes = ['https://www.googleapis.com/auth/spreadsheets']
+
+    # Authenticate and access sheet
+    def _authenticate_google_api_token() -> Resource:
+        """Helper function to authenticate a google sheets api token"""
+        LOGGER.info('Attempting to authenticate the google sheets api')
+
+        # 1. set credentials to None
+        credentials = None
+        # 2. if token.pickle exists, open it and set credentials to it
+        if os_exists('./.creds/token.pickle'):
+            LOGGER.info('token.pickle object found')
+            with open('./.creds/token.pickle', 'rb') as token:
+                credentials = pickle.load(token)
+        # 3. if token.pickle did not exist or was invalid do 3.a or 3.b then recreate the token.pickle
+        if not credentials or not credentials.valid:
+            LOGGER.info('Credentails token.pickle found but invalid, attempting to resolve')
+            # 3.a if you have a credentails object but they're expired and support refreshing \
+            #     try to refresh and if that fails then log this and
+            if credentials and credentials.expired and credentials.refresh_token:
+                try:
+                    credentials.refresh(Request())
+                    LOGGER.info('Refreshing the token.pickle successful')
+                except RefreshError:
+                    LOGGER.error("Credentials could not be refreshed, deleting token.pickle and trying again")
+                    os_remove('./.creds/token.pickle')
+                    # Recursive call to rerun the process once the token is deleted. Max call stack = 1
+                    _authenticate_google_api_token()
+            # 3.b in all oter cases, create a new flow and token.pickle
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    r'./.creds/credentials.json', scopes)
+                credentials = flow.run_local_server(port=0)
+            # Finally, recreate the token.pickle
+            with open('./.creds/token.pickle', 'wb') as token:
+                pickle.dump(credentials, token)
+
+        # 4. Build and return a service (Resource) object
+        LOGGER.info('Successfully authenticated the google sheets api')
+        return build('sheets', 'v4', credentials=credentials)
+
     sheet_ranges = ['C2:C13', 'D2:D13', 'C15:C17']
-    credentials = None
-    if os_exists('./.creds/token.pickle'):
-        with open('./.creds/token.pickle', 'rb') as token:
-            credentials = pickle.load(token)
-    if not credentials or not credentials.valid:
-        if credentials and credentials.expired and credentials.refresh_token:
-            credentials.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                r'./.creds/credentials.json', scopes)
-            credentials = flow.run_local_server(port=0)
-        with open('./.creds/token.pickle', 'wb') as token:
-            pickle.dump(credentials, token)
-
-    service = build('sheets', 'v4', credentials=credentials)
-
     # Call the Sheets API
+    service = _authenticate_google_api_token()
     sheet = service.spreadsheets()
     input_data = sheet.values().batchGet(spreadsheetId=sheet_id, ranges=sheet_ranges).execute()
     # Get sheets values
@@ -218,7 +244,7 @@ def input_sheets(sheet_id: str) -> InputData:
     return result
 
 
-def input_handler(input_type: InputTypes, input_source: Any) -> InputData:
+def input_handler(input_type: InputTypes, input_source: str) -> InputData:
     """Handler function for getting the input data based on input type."""
     LOGGER.info(f'The input handler has been called for type {input_type}')
 
@@ -231,9 +257,9 @@ def input_handler(input_type: InputTypes, input_source: Any) -> InputData:
             result = input_sheets(sheet_id=input_source)
         else:
             LOGGER.error(f'The input type passed is invalid: {input_type}')
-            raise InputError(
+            raise ValueError(
                 f"The input '{input_type}' is invalid.\n"
-                + f"You must enter one of the following input types: {*InputError.valid_input_types,}"
+                + f"You must enter one of the following input types: {InputTypes}"
             )
     except Exception as e:
         LOGGER.exception(e)

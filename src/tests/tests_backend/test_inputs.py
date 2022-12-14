@@ -1,35 +1,42 @@
 # tests.test_inputs.py
+from pytest import raises as p_raises
 from utils import import_json, SAMPLES
-from backend.inputs import input_csv, input_xlsx, _calculate_cost_per_kwh, \
-    _validate_mod_kwh, input_handler, InputError, InputData
+from backend import input_csv, input_xlsx, input_sheets, \
+    input_handler, InputData
+from backend.inputs import _validate_mod_kwh, _calculate_cost_per_kwh
+
+
+_INPUT_VALID = import_json(SAMPLES['input_valid'])
+_INPUT_INVALID = import_json(SAMPLES['input_invalid_value'])
+
+
+def test_validate():
+    """
+    NOTE: validate() is a decorator for the input function
+
+    GIVEN An input function (e.g., input_csv()) being called with the @validate decorator
+    WHEN An invalid input is given
+    THEN The appropriate exception should be thrown
+    """
+    with p_raises(FileNotFoundError):
+        input_csv(file_path=r'./fail/fail.csv')
+    with p_raises(ValueError):
+        input_csv(file_path=SAMPLES['csv_invalid'])
+
 
 def test__calculate_cost_per_kwh():
     """
-    GIVEN A ListMonthly (see backend.utils) list for cost and consumption, \
-        accurately calculate the average cost/kwh.
-    WHEN _calculate_cost_per_kwh is called on 2 ListMonthly lists.
-    THEN _calculate_cost_per_kwh() returns a positive float object.
-    """
-    json_invalid_value = import_json(SAMPLES['input_invalid_value'])
-    json_invalid_type = import_json(SAMPLES['input_invalid_type'])
-
-    cost_invalid_value = json_invalid_value['cost_monthly']
-    cost_invalid_type = json_invalid_type['cost_monthly']
-
-    """
-    Need to test that:
-    - Fails correctly based on values and types
-        - String instead of numeric
-        - Negative when should be positive
-    - Calculates correctly when valid values given
+    GIVEN ListMonthly (see backend/utils.py) lists for cost and consumption
+    WHEN _calculate_cost_per_kwh() is called on 2 ListMonthly lists the average cost/kWh is calculated
+    THEN _calculate_cost_per_kwh() returns a valid float object
     """
 
-    # both test lists are the same so the result should be 1
-    test_result_value = _calculate_cost_per_kwh(cost=invalid_cost, consumption=test_consumption)
-
-    assert isinstance(test_result, float)
-    assert test_result == 1
-    assert test_result > 0
+    assert _calculate_cost_per_kwh(
+                cost=_INPUT_VALID['cost_monthly'], consumption=_INPUT_VALID['consumption_monthly']
+            ) == _INPUT_VALID['cost_per_kwh']
+    assert _calculate_cost_per_kwh(
+                cost=_INPUT_INVALID['cost_monthly'], consumption=_INPUT_INVALID['consumption_monthly']
+            ) == _INPUT_VALID['cost_per_kwh']
 
 
 def test__validate_mod_kwh():
@@ -38,41 +45,85 @@ def test__validate_mod_kwh():
     WHEN The _validate_mod_kwh() is called on that string.
     THEN _validate_mod_kwh() returns a float object.
     """
-    assert isinstance(_validate_mod_kwh(in_data="0.10"), float)
+    # Assert correct functionality
+    assert _validate_mod_kwh(in_data='0.4') == 0.4
+    assert isinstance(_validate_mod_kwh(in_data='0.4'), float)
+    # Invalid type is passed (non-numeric string)
+    with p_raises(ValueError):
+        _validate_mod_kwh(in_data='fail')
+    # Invalid numeric value is passed (0 >= invalid value > 1.5)
+    with p_raises(ValueError):
+        _validate_mod_kwh(in_data='1.8')
+    with p_raises(ValueError):
+        _validate_mod_kwh(in_data='0')
+    with p_raises(ValueError):
+        _validate_mod_kwh(in_data='-1')
 
 
 def test_input_csv():
     """
-    GIVEN A valid relative path to a .csv file.
-    WHEN The input_csv() function is called.
-    THEN input_csv() returns a InputData object
+    GIVEN A valid relative path to a valid .csv file
+    WHEN The input_csv() function is called
+    THEN input_csv() returns a InputData object with valid values
     """
-    assert isinstance(input_csv(file_path=SAMPLE_CSV), InputData)
+    test_output = input_csv(file_path=SAMPLES['csv_valid'])
+    # Assert the correct object is returned. This validates data types/structures.
+    assert isinstance(test_output, InputData)
+    # Assert valid values are reported/calculated
+    assert test_output.consumption_monthly == _INPUT_VALID['consumption_monthly']
+    assert test_output.consumption_annual == _INPUT_VALID['consumption_annual']
+    assert test_output.cost_monthly == _INPUT_VALID['cost_monthly']
+    assert test_output.cost_annual == _INPUT_VALID['cost_annual']
+    assert test_output.cost_per_kwh == _INPUT_VALID['cost_per_kwh']
 
 
 def test_input_xlsx():
     """
-    GIVEN A valid relative path to a .csv file.
-    WHEN The input_csv() function is called.
-    THEN input_csv() returns a InputData object
+    GIVEN A valid relative path to valid a .xlsx file
+    WHEN The input_xlsx() function is called
+    THEN input_xlsx() returns a InputData object with valid values
     """
-    assert isinstance(input_xlsx(file_path=SAMPLE_XLSX), InputData)
+    test_output = input_xlsx(file_path=SAMPLES['xlsx_valid'])
+    # Assert the correct object is returned. This validates data types/structures.
+    assert isinstance(test_output, InputData)
+    # Assert valid values are reported/calculated
+    assert test_output.consumption_monthly == _INPUT_VALID['consumption_monthly']
+    assert test_output.consumption_annual == _INPUT_VALID['consumption_annual']
+    assert test_output.cost_monthly == _INPUT_VALID['cost_monthly']
+    assert test_output.cost_annual == _INPUT_VALID['cost_annual']
+    assert test_output.cost_per_kwh == _INPUT_VALID['cost_per_kwh']
 
 
 def test_input_sheets():
-    """"""
-    pass
+    """
+    GIVEN A valid relative path to valid a .sheet file
+    WHEN The input_sheets() function is called
+    THEN input_sheets() returns a InputData object with valid values
+    """
+    test_output = input_sheets(sheet_id=SAMPLES['sheet'])
+    # Assert the correct object is returned. This validates data types/structures.
+    assert isinstance(test_output, InputData)
+    # Assert valid values are reported/calculated
+    assert test_output.consumption_monthly == _INPUT_VALID['consumption_monthly']
+    assert test_output.consumption_annual == _INPUT_VALID['consumption_annual']
+    assert test_output.cost_monthly == _INPUT_VALID['cost_monthly']
+    assert test_output.cost_annual == _INPUT_VALID['cost_annual']
+    assert test_output.cost_per_kwh == _INPUT_VALID['cost_per_kwh']
 
 
-def test_inputs_handler():
+def test_input_handler():
     """
     GIVEN A correct keyword argument and input source for input_handler().
     WHEN The handler function is executed with correct inputs.
     THEN Calls the correct corresponding function and returns a InputData object
     """
-    assert isinstance(input_handler(input_type='csv', input_source=SAMPLE_CSV), InputData)
-    assert isinstance(input_handler(input_type='xlsx', input_source=SAMPLE_XLSX), InputData)
-    # assert isinstance(input_handler(input_type='sheet', input_source=SAMPLE_SHEET), InputData)
+    # Assert that when passed valid inputs, the handler returns a InputData object
+    assert isinstance(input_handler(input_type='csv', input_source=SAMPLES['csv_valid']), InputData)
+    assert isinstance(input_handler(input_type='xlsx', input_source=SAMPLES['xlsx_valid']), InputData)
+    assert isinstance(input_handler(input_type='sheet', input_source=SAMPLES['sheet']), InputData)
+    # Assert that the accepted input types are recognized
+    # assert ['csv', 'xlsx', 'sheet'] == InputError.valid_input_types
+    # Assert that InputError is passed when an invalid kw arg for input_type is passed.
+    with p_raises(ValueError):
+        input_handler(input_type='fail', input_source=SAMPLES['csv_valid'])
 
-    assert ['csv', 'xlsx', 'sheet', 'manual'] == InputError.valid_input_types
-    assert 'wrong' not in InputError.valid_input_types
