@@ -33,6 +33,7 @@ def _get_params(capacity: int, address: str,
     Everything except capacity and address are defaults provided by PV Watts. Modify them if you need to.
     :return: dictionary of the params.
     """
+
     return {
         "system_capacity": str(capacity),
         "azimuth": azimuth,
@@ -46,20 +47,23 @@ def _get_params(capacity: int, address: str,
 
 def _get_iridescence_obj(params: dict) -> dict:
     """Use requests lib to get iridescence object"""
+
     nrel_token = 'pzWxBOpm2FFksn0T13JLdJCJWjdsDSEYUOSjWQFu'
     LOGGER.info(f'Requesting the nrel api to retrieve solar potential data using token: {nrel_token}')
 
     try:
+        # Try the request
         request = r_get(
             url=f'https://developer.nrel.gov/api/pvwatts/v6.json?api_key={nrel_token}',
             params=params
         )
     except Exception as e:
+        # Log and raise the appropriate exception if encountered
         LOGGER.error(e, exc_info=True)
         raise e
     else:
-        LOGGER.info(f'Request successful for solar potential data')
-        LOGGER.info(request.json())
+        # Return the requested data if request successful
+        LOGGER.info(f'Request successful for solar potential data: {request.json()}')
         return request.json()
 
 
@@ -79,6 +83,7 @@ def get_solar_potential(address: str, annual_consumption: int) -> SolarPotential
     :param annual_consumption: This is the actual annual consumption. Generated from inputs.py
     :return SolarPotentialData model
     """
+
     LOGGER.info(f'Attempting to retrieve the solar potential data for the following address: {address}')
 
     # 1. Get normalized data:
@@ -100,8 +105,7 @@ def get_solar_potential(address: str, annual_consumption: int) -> SolarPotential
         needed_kwh=needed_kwh
     )
 
-    LOGGER.info('Solar data retrieved and validated')
-    LOGGER.info(result)
+    LOGGER.info(f'Solar data retrieved and validated: {result}')
     return result
 
 
