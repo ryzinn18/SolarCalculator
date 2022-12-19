@@ -36,23 +36,29 @@ class Results(BaseModel):
 
 class OutputPath:
     def __init__(self, name: str,
-                 file: Literal['EnergyGraph', 'CostGraph', 'OutputData'], ext: Literal['png', 'csv'],
+                 file: Literal['EnergyGraph', 'CostGraph', 'OutputData'],
+                 dir_name: Literal['OutputGraphs', 'OutputDataFiles'],
+                 ext: Literal['png', 'csv'],
                  root='SolarCalculator'):
+        """Simple class for creating specific output paths."""
 
-        self.path = PurePath(os_join(get_root(root_name=root), 'OutputGraphs', f'{name}-{file}.{ext}'))
+        self.path = PurePath(os_join(get_root(root_name=root), dir_name, f'{name}-{file}.{ext}'))
 
 
 def _average(iterable: Union[Sequence, Collection]) -> int:
-    """Helper function to calculate the average of the items in an iterable."""
+    """Calculate the average of the items in a Sequence/Collection as a rounded int value."""
+
     return round(sum(iterable) / len(iterable))
 
 
 def get_data_df(
         input_data: InputData, solar_potential_monthly: IntListMonthly, potential_cost_monthly: FloatListMonthly,
         savings_monthly: FloatListMonthly, cost_reduction_monthly: FloatListMonthly) -> DataFrame:
-    """Creates a pandas data from with all the input, solar, and analysis data."""
+    """Creates a pandas data frame with all the input, solar, and analysis data and their annual sums."""
+
     LOGGER.info('Creating DataFrame of core data')
-    result = DataFrame(data={  # format: [list monthly] + [annual total]
+
+    result = DataFrame(data={  # data type: [list monthly] + [annual total/annual average]
         'Month': list(MONTHS_MAP.values()) + ['Annual'],
         'Consumption kWh': input_data.consumption_monthly + [input_data.consumption_annual],
         'Cost $': input_data.cost_monthly + [input_data.cost_annual],
@@ -62,7 +68,7 @@ def get_data_df(
         'Cost Reduction %': cost_reduction_monthly + [_average(cost_reduction_monthly)]
     })
 
-    LOGGER.info('DataFrame successfully created')
+    LOGGER.info(f'DataFrame successfully created: {result}')
     return result
 
 
@@ -70,10 +76,13 @@ def create_comparison_graph(
         title: str, df1: DataFrame, df2: DataFrame, label1: str, label2: str, y_label: str,
         out_path: Union[PathLike, str], graph_type: Literal['energy', 'cost']) -> None:
     """Creates a graph with 2 overlying plots for comparison."""
+
     LOGGER.info(f'Creating the comparison graph titled: {title}')
 
     def _plot_bar(df: DataFrame, label: str, color: str) -> None:
-        """Helper function to plot each bar-plot and set the label"""
+        """Plot each bar-plot and set the label."""
+
+        # Plot the bar plot
         _ax = ax.bar(
             x=list(MONTHS_MAP.values()),
             height=df.drop(df.index[-1]),
@@ -91,7 +100,7 @@ def create_comparison_graph(
         )
 
     # Define color_map for storing colors based on graph type
-    color_map = {  # key: [d1-color, d2-color]
+    color_map = {  # key: [df1-color, df2-color]
         'energy': ['indianred', 'gold'],
         'cost': ['lightcoral', 'darkolivegreen']
     }
@@ -121,33 +130,37 @@ def create_comparison_graph(
 
 
 def create_out_csv(header: dict, data_df: DataFrame, footer: dict,
-                   out_relative_path: Union[PathLike, str]) -> None:
-    """Creates the output csv at the relative path passed."""
+                   out_path: Union[PathLike, str]) -> None:
+    """Create the output csv at the path passed."""
+
     LOGGER.info('Creating output csv')
 
     def _write_dict(to_write: dict) -> None:
         """Helper to iterate through a dict and write its items to csv."""
+
         for key, val in to_write.items():
             writer.writerow([key, val])
 
-    with open(out_relative_path, 'w') as out_file:
+    with open(out_path, 'w') as out_file:
         writer = csv_writer(out_file, delimiter=',')
-
+        # Write header data (Name, Address, Cost/kWh)
         _write_dict(to_write=header)
-
+        # Write data (Cost, Actual Cost, Actual Consumption, etc.)
         data_df.to_csv(out_file, mode='a', index=False)
-
+        # Write footer data (Notes & Sources)
         _write_dict(to_write=footer)
 
-    LOGGER.info(f'Output csv successfully created: {out_relative_path}')
+    LOGGER.info(f'Output csv successfully created: {out_path}')
 
 
 def get_results(input_data: InputData, solar_potential_data: SolarPotentialData) -> Results:
-    """Get graph, calculate your savings and mod quantity, and return your data objects."""
+    """Create graphs, calculate savings and mod quantity, and return Results data object."""
+
     LOGGER.info(f'Generating ResultsData for name: {input_data.name}')
 
     def _helper_calculate(func: Callable, zipped: tuple, arg3=None) -> FloatListMonthly:
         """Helper to clean up calculations for different monthly and annual figures."""
+
         out = []
         for arg1, arg2 in zipped:
             out.append(func(arg1, arg2, arg3))
@@ -155,9 +168,9 @@ def get_results(input_data: InputData, solar_potential_data: SolarPotentialData)
         return out
 
     # Declare output paths
-    path_graph_cost = OutputPath(name=input_data.name, file='CostGraph', ext='png').path
-    path_graph_energy = OutputPath(name=input_data.name, file='EnergyGraph', ext='png').path
-    path_csv_out = OutputPath(name=input_data.name, file='OutputData', ext='csv').path
+    path_graph_cost = OutputPath(name=input_data.name, dir_name='OutputGraphs', file='CostGraph', ext='png').path
+    path_graph_energy = OutputPath(name=input_data.name, dir_name='OutputGraphs', file='EnergyGraph', ext='png').path
+    path_csv_out = OutputPath(name=input_data.name, dir_name='OutputDataFiles', file='OutputData', ext='csv').path
 
     # Calculate Potential Cost, Savings, and Cost Reduction
     potential_cost_monthly = _helper_calculate(
@@ -181,6 +194,7 @@ def get_results(input_data: InputData, solar_potential_data: SolarPotentialData)
         savings_monthly=savings_monthly,
         cost_reduction_monthly=cost_reduction_monthly,
     )
+    # Create cost comparison graph
     create_comparison_graph(
         title=f"{input_data.name}'s Actual vs Potential Cost",
         df1=results_df['Cost $'].round(),
@@ -191,6 +205,7 @@ def get_results(input_data: InputData, solar_potential_data: SolarPotentialData)
         out_path=path_graph_cost,
         graph_type='cost'
     )
+    # Create consumption vs production graph
     create_comparison_graph(
         title=f"{input_data.name}'s Energy Consumption vs Production",
         df1=results_df['Consumption kWh'],
@@ -201,6 +216,7 @@ def get_results(input_data: InputData, solar_potential_data: SolarPotentialData)
         out_path=path_graph_energy,
         graph_type='energy'
     )
+    # Create the output csv
     create_out_csv(
         header={'Name': input_data.name,
                 'Address': input_data.address,
@@ -210,9 +226,10 @@ def get_results(input_data: InputData, solar_potential_data: SolarPotentialData)
         footer={'': '',  # Blank Row
                 'Note:': solar_potential_data.note,
                 'Potential kWh Source:': solar_potential_data.source},
-        out_relative_path=path_csv_out
+        out_path=path_csv_out
     )
 
+    # Create the Results data object
     result = Results(
         name=input_data.name,
         address=input_data.address,

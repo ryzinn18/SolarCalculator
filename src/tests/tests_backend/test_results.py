@@ -88,7 +88,7 @@ def test_create_out_csv():
             footer={'': '',  # Blank Row
                     'Note:': 'test_note',
                     'Potential kWh Source:': 'test_source'},
-            out_relative_path=tmp_file_path
+            out_path=tmp_file_path
         )
         assert isfile(tmp_file_path)
 
