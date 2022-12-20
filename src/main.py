@@ -29,8 +29,8 @@ def main():
 
     # Get Input data
     data_input = inp.input_handler(
-        input_type='csv',
-        input_source=SAMPLES['csv_valid']
+        input_type='sheet',
+        input_source=SAMPLES['sheet']
     )
     LOGGER.info(f'InputData successfully received for name {data_input.name}')
 

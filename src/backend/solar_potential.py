@@ -4,9 +4,9 @@
 Notes:
 - get_irid_object()'s call may need to be wrapped in a requests.exceptions.JSONDecodeError try/except statement.
 Failed randomly with the above exception then worked the second time.
-- personal nrel token: pzWxBOpm2FFksn0T13JLdJCJWjdsDSEYUOSjWQFu
 """
 from backend.utils import IntListMonthly, LOGGER
+from config import nrel_api_key
 from requests import get as r_get
 from pydantic import BaseModel, PositiveInt
 
@@ -45,10 +45,9 @@ def _get_params(capacity: int, address: str,
     }
 
 
-def _get_iridescence_obj(params: dict) -> dict:
-    """Use requests lib to get iridescence object"""
+def _get_iridescence_obj(params: dict, nrel_token: str) -> dict:
+    """Use requests lib to get iridescence object via the nrel token passed."""
 
-    nrel_token = 'pzWxBOpm2FFksn0T13JLdJCJWjdsDSEYUOSjWQFu'
     LOGGER.info(f'Requesting the nrel api to retrieve solar potential data using token: {nrel_token}')
 
     try:
@@ -88,13 +87,13 @@ def get_solar_potential(address: str, annual_consumption: int) -> SolarPotential
 
     # 1. Get normalized data:
     normal_params = _get_params(capacity=1, address=address)
-    normal_outputs = _get_iridescence_obj(params=normal_params).get('outputs')
+    normal_outputs = _get_iridescence_obj(params=normal_params, nrel_token=nrel_api_key).get('outputs')
     normal_annual = round(normal_outputs.get('ac_annual'))
     # 2. Calculate needed kWh:
     needed_kwh = round(annual_consumption / normal_annual)
     # 3. Get solar potential data:
     actual_params = _get_params(capacity=needed_kwh, address=address)
-    actual_obj = _get_iridescence_obj(params=actual_params)
+    actual_obj = _get_iridescence_obj(params=actual_params, nrel_token=nrel_api_key)
     actual_outputs = actual_obj.get('outputs')
     actual_monthly = actual_outputs.get('ac_monthly')
     # 4. Validate actual data into SolarPotentialData model.

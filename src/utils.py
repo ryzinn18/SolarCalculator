@@ -1,4 +1,5 @@
 # ~/src/utils.py
+from config import google_api_sheet_id
 import logging
 from typing import Union, Dict, Any, List, Type
 from pathlib import PurePath
@@ -6,7 +7,7 @@ from pathlib import PurePath
 JSON = Union[Dict[str, Any], List[Any], int, str, float, bool, Type[None]]
 
 SAMPLES = {
-    'sheet': '1gneTmzTrGTsJIrjkjzEOYS-Bq7irB_WZ2TJWXMlFp4k',
+    'sheet': google_api_sheet_id,
 
     'csv_valid': r'./samples/consumption_valid.csv',
     'csv_invalid': r'./samples/consumption_invalid.csv',
@@ -43,9 +44,13 @@ def import_json(path: str) -> dict:
     """
     Imports a .json file and returns that object as a json (dict)
     :param path: A relative path to the existing json file. Must include .json in the end of the string
-    :return A json (dict) object"""
+    :return A json (dict) object
+    """
+
     from os.path import isfile
     from json import load as j_load
+
+    LOGGER.info(f'Attempting to import the following json: {path}')
 
     # Raise OSError if the .json does not exist
     if not isfile(path):
@@ -70,7 +75,11 @@ def import_json(path: str) -> dict:
 
 def export_json(j_obj: JSON, target_directory: str, out_name: str) -> None:
     """Exports Pydantic model to json file in target_directory"""
+
     from os.path import isdir
+
+    LOGGER.info(f'Attempting to export the following object to target_directory: {target_directory}')
+    LOGGER.info(j_obj)
 
     # Clean up variables passed
     target_directory = target_directory.rstrip(r'/')
@@ -92,10 +101,12 @@ def export_json(j_obj: JSON, target_directory: str, out_name: str) -> None:
 
 def get_root(root_name: str) -> str:
     """Returns the path of the parent directory."""
+
     from os.path import isdir
     from pathlib import Path
 
     LOGGER.info(f'Attempting get_root(parent_name={root_name})')
+
     # Gets parent path via calling Path().parent and converts it to string via __str__()
     # Then strips the string at the parent directory and finally appends name to the path
     root = Path(__file__).parent.parent.__str__().split(root_name)[0] + root_name

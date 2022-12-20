@@ -223,9 +223,9 @@ def input_sheets(sheet_id: str) -> InputData:
                 credentials = pickle.load(token)
         # 3. if token.pickle did not exist or was invalid do 3.a or 3.b then recreate the token.pickle
         if not credentials or not credentials.valid:
-            LOGGER.info('Credentails token.pickle found but invalid, attempting to resolve')
-            # 3.a if you have a credentails object but they're expired and support refreshing \
-            #     try to refresh and if that fails then log this and
+            LOGGER.info('Credentials token.pickle found but invalid, attempting to resolve')
+            # 3.a if you have a credentials object but they're expired and support refreshing \
+            #     try to refresh and if that fails then log this error
             if credentials and credentials.expired and credentials.refresh_token:
                 try:
                     credentials.refresh(Request())
@@ -235,7 +235,7 @@ def input_sheets(sheet_id: str) -> InputData:
                     os_remove('./.creds/token.pickle')
                     # Recursive call to rerun the process once the token is deleted. Max call stack = 1
                     _authenticate_google_api_token()
-            # 3.b in all oter cases, create a new flow and token.pickle
+            # 3.b in all other cases, create a new flow and token.pickle
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
                     r'./.creds/credentials.json', scopes)
