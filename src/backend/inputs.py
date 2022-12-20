@@ -188,7 +188,7 @@ def input_xlsx(file_path: str) -> InputData:
     return result
 
 
-@validate
+#@validate
 def input_sheets(sheet_id: str) -> InputData:
     """
     _authenticate_google_api_token() script from below and updated slightly by me.

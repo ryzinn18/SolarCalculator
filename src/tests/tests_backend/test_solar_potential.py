@@ -1,5 +1,6 @@
 # tests.test_solar_potential.py
 from utils import import_json, SAMPLES
+from config import nrel_api_key
 from backend.solar_potential import _get_params, _get_iridescence_obj, \
     get_solar_potential, SolarPotentialData
 
@@ -29,7 +30,7 @@ def test__get_iridescence_object():
     THEN Get a dictionary containing the response.
     """
     test_params = _get_params(capacity=1, address=_INPUT_VALID['address'])
-    test_irid_obj = _get_iridescence_obj(params=test_params)
+    test_irid_obj = _get_iridescence_obj(params=test_params, nrel_token=nrel_api_key)
 
     assert isinstance(test_irid_obj, dict)
     assert test_irid_obj.get('outputs') is not None
