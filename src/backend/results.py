@@ -37,12 +37,12 @@ class Results(BaseModel):
 class OutputPath:
     def __init__(self, name: str,
                  file: Literal['EnergyGraph', 'CostGraph', 'OutputData'],
-                 dir_name: Literal['OutputGraphs', 'OutputDataFiles'],
+                 dir_name: Literal['Graphs', 'DataFiles'],
                  ext: Literal['png', 'csv'],
                  root='SolarCalculator'):
         """Simple class for creating specific output paths."""
 
-        self.path = PurePath(os_join(get_root(root_name=root), dir_name, f'{name}-{file}.{ext}'))
+        self.path = PurePath(os_join(get_root(root_name=root), 'Outputs', dir_name, f'{name}-{file}.{ext}'))
 
 
 def _average(iterable: Union[Sequence, Collection]) -> int:
@@ -168,9 +168,9 @@ def get_results(input_data: InputData, solar_potential_data: SolarPotentialData)
         return out
 
     # Declare output paths
-    path_graph_cost = OutputPath(name=input_data.name, dir_name='OutputGraphs', file='CostGraph', ext='png').path
-    path_graph_energy = OutputPath(name=input_data.name, dir_name='OutputGraphs', file='EnergyGraph', ext='png').path
-    path_csv_out = OutputPath(name=input_data.name, dir_name='OutputDataFiles', file='OutputData', ext='csv').path
+    path_graph_cost = OutputPath(name=input_data.name, dir_name='Graphs', file='CostGraph', ext='png').path
+    path_graph_energy = OutputPath(name=input_data.name, dir_name='Graphs', file='EnergyGraph', ext='png').path
+    path_csv_out = OutputPath(name=input_data.name, dir_name='DataFiles', file='OutputData', ext='csv').path
 
     # Calculate Potential Cost, Savings, and Cost Reduction
     potential_cost_monthly = _helper_calculate(
