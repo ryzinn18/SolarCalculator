@@ -129,5 +129,7 @@ dmypy.json
 .pyre/
 
 # .gitignore
+OutputDataFiles/
+OutputGraphs/
 src/config.py
-src/.creds
+src/.creds/
