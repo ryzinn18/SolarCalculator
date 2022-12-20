@@ -197,6 +197,7 @@ def input_sheets(sheet_id: str) -> InputData:
     Will redirect to a google authenticate page if you have not run in a while and ask you to manually authenticate.
         Should find a way around this. Probably a permissions issue.
     """
+
     from googleapiclient.discovery import build, Resource
     from google_auth_oauthlib.flow import InstalledAppFlow
     from google.auth.transport.requests import Request
@@ -279,7 +280,7 @@ def input_sheets(sheet_id: str) -> InputData:
         cost_per_kwh=_calculate_cost_per_kwh(cost=cost, consumption=consumption)
     )
 
-    LOGGER.info(f'InputData successfully collected from Google Sheet: {sheet_id}')
+    LOGGER.info(f'InputData successfully collected from Google Sheet')
     return result
 
 
