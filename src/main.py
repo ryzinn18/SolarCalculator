@@ -1,27 +1,8 @@
-"""
-ToDo (smaller):
-- Restructure repo:
-    - update __init__.py in backend directory so that can inport any backend object from single line
-- Get real values for samples.
-
-ToDo (large):
-- Top down documentation.
-- Unit tests all modules.
-- Create web UI (JavaScript).
-    - Build UI.
-    - Build APIs.
-- Package!
-"""
-from utils import SAMPLES, export_json, import_json #, LOGGER
+# ./src/main.py
+# This is the main module for running this program
+from utils import SAMPLES
 from backend import inputs as inp, solar_potential as sp, results as res
 from backend.utils import LOGGER
-
-_INPUT_VALID = import_json(SAMPLES['input_valid'])
-_INPUT_INVALID = import_json(SAMPLES['input_invalid_value'])
-
-_SOLAR_POTENTIAL_VALID = import_json(SAMPLES['solar_potential_valid'])
-
-_RESULT_VALID = import_json(SAMPLES['results_valid'])
 
 
 def main():
@@ -29,25 +10,24 @@ def main():
 
     # Get Input data
     data_input = inp.input_handler(
-        input_type='sheet',
-        input_source=SAMPLES['sheet']
+        input_type='csv',
+        input_source=SAMPLES['csv_valid']
     )
-    LOGGER.info(f'InputData successfully received for name {data_input.name}')
+    LOGGER.info(f'InputData successfully received for name: {data_input.name}')
 
     # Get Solar Potential data
     data_solar_potential = sp.get_solar_potential(
         address=data_input.address,
         annual_consumption=data_input.consumption_annual
     )
-    LOGGER.info(f'SolarPotentialData data successfully received for address {data_solar_potential.address}')
+    LOGGER.info(f'SolarPotentialData data successfully received for address: {data_solar_potential.address}')
 
     # Get Results data
     data_results = res.get_results(input_data=data_input, solar_potential_data=data_solar_potential)
-    LOGGER.info(f'ResultsData successfully received for {data_results.name}')
+    LOGGER.info(f'Results data successfully received for: {data_results.name}')
 
     return data_input
 
 
 if __name__ == '__main__':
     main()
-
