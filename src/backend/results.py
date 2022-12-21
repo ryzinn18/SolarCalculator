@@ -1,4 +1,5 @@
 # ~/src/backend/results.py
+# Integrates InputData and SolarPotentialData into Results data object and creates outputs
 from utils import get_root, JSON
 from backend.utils import MONTHS_MAP, IntListMonthly, FloatListMonthly, AmbiguousListMonthly, LOGGER
 from backend.solar_potential import SolarPotentialData
@@ -68,7 +69,7 @@ def get_data_df(
         'Cost Reduction %': cost_reduction_monthly + [_average(cost_reduction_monthly)]
     })
 
-    LOGGER.info(f'DataFrame successfully created: {result}')
+    LOGGER.info(f'DataFrame successfully created: {result.to_dict()}')
     return result
 
 
@@ -80,7 +81,7 @@ def create_comparison_graph(
     LOGGER.info(f'Creating the comparison graph titled: {title}')
 
     def _plot_bar(df: DataFrame, label: str, color: str) -> None:
-        """Plot each bar-plot and set the label."""
+        """Plot a bar-plot and set the label."""
 
         # Plot the bar plot
         _ax = ax.bar(
@@ -249,7 +250,7 @@ def get_results(input_data: InputData, solar_potential_data: SolarPotentialData)
         solar_potential_data=solar_potential_data
     )
 
-    LOGGER.info(f'ResultsData successfully created and validated for name: {input_data.name}')
+    LOGGER.info(f'Results data successfully created and validated: {result}')
     return result
 
 
