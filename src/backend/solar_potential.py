@@ -1,10 +1,6 @@
 # solar_potential.py
-# This module gets the solar iridescence for a given address.
-"""
-Notes:
-- get_irid_object()'s call may need to be wrapped in a requests.exceptions.JSONDecodeError try/except statement.
-Failed randomly with the above exception then worked the second time.
-"""
+# This module gets the solar iridescence data for a given address.
+
 from backend.utils import IntListMonthly, LOGGER
 from config import nrel_api_key
 from requests import get as r_get
