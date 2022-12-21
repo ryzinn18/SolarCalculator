@@ -14,7 +14,8 @@ Conventional logging capabilities added to aid with debugging when necessary.
 Will soon add AWS DynamoDB and S3 buckets for storing output data and output objects (graphs) respectively by user.
 Working to add a web UI and API to communicate with backend.
 Have a simple web UI users can enter their inputs in manually or upload one of the accepted file types (csv, xlsx, google sheets).
-Display outputs to the user and allow them to download the necessary info.
+Display outputs to the user and allow them to download the necessary info. 
+Please review posted issues for more details and more future capabilities in the works.
 
 ## To Run
 First, fork a copy of the repository. Next, install the requirements in requirements.txt; ensure your version of python is > 3.8. Then, acquire a NREL Developer token (see link below) and store it as nrel_api_key within ./src/config.py. Note, if you want to use google sheets to input data, you will need to acquire a token from them, run the quickstart, and store the sheet id as google_api_sheet_id within ./src/config.py as well. Finally, run the main() function.
