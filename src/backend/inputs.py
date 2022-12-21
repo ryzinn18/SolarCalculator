@@ -1,4 +1,6 @@
 # ~src/backend/inputs.py
+# Handles an input type by calling the correct input function and validates InputData
+
 from backend.utils import IntListMonthly, FloatListMonthly, LOGGER
 from pydantic import BaseModel, PositiveFloat, PositiveInt
 from typing import Literal, Callable
