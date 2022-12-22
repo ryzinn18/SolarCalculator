@@ -4,6 +4,7 @@
 from backend.utils import IntListMonthly, LOGGER
 from config import nrel_api_key
 from requests import get as r_get
+from json import JSONDecodeError
 from pydantic import BaseModel, PositiveInt
 
 
@@ -45,21 +46,28 @@ def _get_iridescence_obj(params: dict, nrel_token: str) -> dict:
     """Use requests lib to get iridescence object via the nrel token passed."""
 
     LOGGER.info(f'Requesting the nrel api to retrieve solar potential data using token: {nrel_token}')
+    i = 0
+    while i < 3:
+        try:
+            # Try the request
+            request = r_get(
+                url=f'https://developer.nrel.gov/api/pvwatts/v6.json?api_key={nrel_token}',
+                params=params
+            )
+            break
+        except JSONDecodeError:
+            # This is a rare error that is alleviated by recalling the get request.
+            # If encountered, recall the get function a max of 3 times.
+            LOGGER.error('JSONDecodeError encountered. Attempting the call again', exc_info=True)
+            i += 1
+        except Exception as e:
+            # Log and raise the appropriate exception if encountered
+            LOGGER.error(e, exc_info=True)
+            raise e
 
-    try:
-        # Try the request
-        request = r_get(
-            url=f'https://developer.nrel.gov/api/pvwatts/v6.json?api_key={nrel_token}',
-            params=params
-        )
-    except Exception as e:
-        # Log and raise the appropriate exception if encountered
-        LOGGER.error(e, exc_info=True)
-        raise e
-    else:
-        # Return the requested data if request successful
-        LOGGER.info(f'Request successful for solar potential data: {request.json()}')
-        return request.json()
+    # Return the requested data if request successful
+    LOGGER.info(f'Request successful for solar potential data: {request.json()}')
+    return request.json()
 
 
 def get_solar_potential(address: str, annual_consumption: int) -> SolarPotentialData:
