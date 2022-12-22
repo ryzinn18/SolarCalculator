@@ -18,6 +18,9 @@ Display outputs to the user and allow them to download the necessary info.
 Please review posted issues for more details and more future capabilities in the works.
 
 ## To Run
-First, fork a copy of the repository. Next, install the requirements in requirements.txt; ensure your version of python is > 3.8. Then, acquire a NREL Developer token (see link below) and store it as nrel_api_key within ./src/config.py. Note, if you want to use google sheets to input data, you will need to acquire a token from them, run the quickstart, and store the sheet id as google_api_sheet_id within ./src/config.py as well. You can then modify one of the sample input files (csv or xlsx) with your specific info (address, monthly energy consumption, and/or monthly energy cost) or run it on the sample info. Finally, run the main() function and be sure to update the input_type and input_source parameters for the input_handler function.
-
-NREL Token Sign Up page: https://developer.nrel.gov/signup/
+First, fork a copy of the repository. 
+Next, install the requirements in requirements.txt; ensure your version of python is > 3.8. 
+Then, acquire a NREL Developer token (see link below) and store it as nrel_api_key within src/config.py. There is already a template module for this (src/config-template.py). Simply delete "_template" from the module name and include your NREL API key.
+Note, if you want to use Google sheets to input data, you will need to acquire a token from them, run the quickstart, and store the sheet id as google_api_sheet_id within src/config.py as well. 
+You can then modify one of the sample input files (csv or xlsx) with your specific info (address, monthly energy consumption, and/or monthly energy cost) or run it on the sample info. 
+Finally, run the main() function and be sure to update the input_type and input_source parameters for the input_handler function.
