@@ -29,6 +29,7 @@
                         <li class="nav-item"><a class="nav-link" href="#howto">How To</a></li>
 <!--                        <li class="nav-item"><a class="nav-link" href="#portfolio">Portfolio</a></li>-->
                         <li class="nav-item"><a class="nav-link" href="#runtool">Run Tool</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
                         <li class="nav-item"><a class="nav-link" href="https://github.com/ryzinn18/SolarCalculator" target="_blank">Codebase</a></li>
                     </ul>
                 </div>
@@ -56,8 +57,8 @@
                     <div class="col-lg-8 text-center">
                         <h2 class="text-white mt-0">How To Use The Solar Calculator</h2>
                         <hr class="divider divider-light" />
-                        <p class="text-white-75 mb-4">Using The Solar Calculator is simple! All you need is your energy consumption & cost over the past year. You can acquire this easily from your utility company online or over the phone. Once you have this, enter your consumption info and address into the section below and hit the Run&nbsp;button.</p>
-                        <p class="text-white-75 mb-4"><b><u>Note:</u></b> that you do not need to use your personal address. You can use a nearby one, like your local library. Or, you could just enter your city and state. Keep in mind, the closer the address you enter is to your actual residence, the more accurate your results&nbsp;are!</p>
+                        <p class="text-white-75 mb-4">Using The Solar Calculator is simple! All you need is your energy consumption & cost over the past year. You can acquire this easily from your utility company online or over the phone. Once you have this, enter your consumption info and address into the section below and hit the Run&nbsp;Tool&nbsp;button.</p>
+                        <p class="text-white-75 mb-4"><b><u>Note:</u></b> that you do not need to use your personal address. You can use a nearby one, such as your local library. Or, you could just enter your city and state. Keep in mind, the closer the address you enter is to your actual residence, the more accurate your results&nbsp;are!</p>
                         <p class="text-white-75 mb-4"><b><u>Note:</u></b> energy consumption must be entered in kiloWattHours (kWh) per month. Your utility company will likely provide your consumption in this metric. If not, Google offers simple conversion&nbsp;tools.</p>
 <!--                        <p class="text-white-75 mb-4">To learn more about this project, check out our About Us page!</p>-->
                         <a class="btn btn-light btn-xl" href="#services">Get Started!</a>
@@ -127,27 +128,167 @@
 <!--                </div>-->
 <!--            </div>-->
 <!--        </div>-->
-        <!-- Contact-->
+        <!-- Run Tool-->
         <section class="page-section" id="runtool">
             <div class="container px-4 px-lg-5" >
                 <div class="row gx-4 gx-lg-5 justify-content-center">
                     <div class="col-lg-8 col-xl-6 text-center">
                         <h2 class="mt-0">Run the Tool!</h2>
                         <hr class="divider" />
-                        <p class="text-muted mb-5">Enter your energy consumption and cost below. Once you are done, click the Run Tool&nbsp;button!</p>
+                        <p class="text-muted mb-5">Enter a username, address or zip, and energy consumption & cost below. Once you are done, click the Run Tool&nbsp;button!<br><br>Remember, you do not need to enter your actual address. You can enter a nearby address such as your local library or post&nbsp;office.</p>
+                        <hr class="divider" />
                     </div>
                 </div>
 
-
                 <div class="row gx-4 gx-lg-5 justify-content-center">
-                    <form id="fs-frm" name="simple-contact-form" accept-charset="utf-8" action="https://formspree.io/f/mnqynyol" method="post">
+                    <form id="tool-frm" name="simple-contact-form" accept-charset="utf-8" action="https://formspree.io/f/mnqynyol" method="post">
 
-                        <fieldset id="fs-frm-inputs">
-                            <input class="form-control" id="full-name" type="text" name="name" placeholder="Enter your name..." /><br>
-                            <input class="form-control" id="email-address" type="email" name="_replyto" placeholder="Enter your email..." /><br>
-                            <textarea class="form-control" id="message" name="message" placeholder="Enter your message..." style="height: 10rem" data-sb-validations="required"></textarea><br>
-                            <input type="hidden" name="_subject" id="email-subject" value="Contact Form Submission">
-
+                        <fieldset id="tool-frm-inputs">
+                            <center>
+                            <table>
+                                <tr>
+                                    <td><b>Enter Username:</b></td>
+                                    <td>
+                                        <input class="form-control" type="text" name="name" id="name" placeholder="Username..."/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><b>Enter Address or Zip: </b></td>
+                                    <td>
+                                        <input class="form-control" type="text" name="name" id="address" placeholder="Address..."/>
+                                    </td>
+                                </tr>
+                            </table>
+                            <br>
+                            <table>
+                                <!--Header Row-->
+                                <tr>
+                                    <th width="20%"><center>Month</center></th>
+                                    <th width="40%"><center>Energy</center></th>
+                                    <th width="40%"><center>Cost</center></th>
+                                </tr>
+                                <!--January Row-->
+                                <tr>
+                                    <td><center>January:</center></td>
+                                    <td>
+                                        <input class="form-control" type="text" name="energyJan" id="energyJan" placeholder="kWh"/>
+                                    </td>
+                                    <td>
+                                        <input class="form-control" type="text" name="costJan" id="costJan" placeholder="$"/>
+                                    </td>
+                                </tr>
+                                <!--February Row-->
+                                <tr>
+                                    <td><center>February:</center></td>
+                                    <td>
+                                        <input class="form-control" type="text" name="energyFeb" id="energyFeb" placeholder="kWh"/>
+                                    </td>
+                                    <td>
+                                        <input class="form-control" type="text" name="costFeb" id="costFeb" placeholder="$"/>
+                                    </td>
+                                </tr>
+                                <!--March Row-->
+                                <tr>
+                                    <td><center>March:</center></td>
+                                    <td>
+                                        <input class="form-control" type="text" name="energyMar" id="energyMar" placeholder="kWh"/>
+                                    </td>
+                                    <td>
+                                        <input class="form-control" type="text" name="costMar" id="costMar" placeholder="$"/>
+                                    </td>
+                                </tr>
+                                <!--April Row-->
+                                <tr>
+                                    <td><center>April:</center></td>
+                                    <td>
+                                        <input class="form-control" type="text" name="energyApr" id="energyApr" placeholder="kWh"/>
+                                    </td>
+                                    <td>
+                                        <input class="form-control" type="text" name="costApr" id="costApr" placeholder="$"/>
+                                    </td>
+                                </tr>
+                                <!--May Row-->
+                                <tr>
+                                    <td><center>May:</center></td>
+                                    <td>
+                                        <input class="form-control" type="text" name="energyMay" id="energyMay" placeholder="kWh"/>
+                                    </td>
+                                    <td>
+                                        <input class="form-control" type="text" name="costMay" id="costMay" placeholder="$"/>
+                                    </td>
+                                </tr>
+                                <!--June Row-->
+                                <tr>
+                                    <td><center>June:</center></td>
+                                    <td>
+                                        <input class="form-control" type="text" name="energyJune" id="energyJune" placeholder="kWh"/>
+                                    </td>
+                                    <td>
+                                        <input class="form-control" type="text" name="costJune" id="costJune" placeholder="$"/>
+                                    </td>
+                                </tr>
+                                <!--July Row-->
+                                <tr>
+                                    <td><center>July:</center></td>
+                                    <td>
+                                        <input class="form-control" type="text" name="energyJuly" id="energyJuly" placeholder="kWh"/>
+                                    </td>
+                                    <td>
+                                        <input class="form-control" type="text" name="costJuly" id="costJuly" placeholder="$"/>
+                                    </td>
+                                </tr>
+                                <!--August Row-->
+                                <tr>
+                                    <td><center>August:</center></td>
+                                    <td>
+                                        <input class="form-control" type="text" name="energyAug" id="energyAug" placeholder="kWh"/>
+                                    </td>
+                                    <td>
+                                        <input class="form-control" type="text" name="costAug" id="costAug" placeholder="$"/>
+                                    </td>
+                                </tr>
+                                <!--September Row-->
+                                <tr>
+                                    <td><center>September:</center></td>
+                                    <td>
+                                        <input class="form-control" type="text" name="energySep" id="energySep" placeholder="kWh"/>
+                                    </td>
+                                    <td>
+                                        <input class="form-control" type="text" name="costSep" id="costSep" placeholder="$"/>
+                                    </td>
+                                </tr>
+                                <!--October Row-->
+                                <tr>
+                                    <td><center>October:</center></td>
+                                    <td>
+                                        <input class="form-control" type="text" name="energySepOct" id="energySepOct" placeholder="kWh"/>
+                                    </td>
+                                    <td>
+                                        <input class="form-control" type="text" name="costSepOct" id="costSepOct" placeholder="$"/>
+                                    </td>
+                                </tr>
+                                <!--November Row-->
+                                <tr>
+                                    <td><center>September:</center></td>
+                                    <td>
+                                        <input class="form-control" type="text" name="energyNov" id="energyNov" placeholder="kWh"/>
+                                    </td>
+                                    <td>
+                                        <input class="form-control" type="text" name="costNov" id="costNov" placeholder="$"/>
+                                    </td>
+                                </tr>
+                                <!--December Row-->
+                                <tr>
+                                    <td><center>December:</center></td>
+                                    <td>
+                                        <input class="form-control" type="text" name="energyDec" id="energyDec" placeholder="kWh"/>
+                                    </td>
+                                    <td>
+                                        <input class="form-control" type="text" name="costDec" id="costDec" placeholder="$"/>
+                                    </td>
+                                </tr>
+                            </table></center>
+                            <br>
                             <div class="d-grid" >
                                 <center><button class="btn btn-primary btn-xl" id="runToolButton" type="submit" value="Submit" >Run Tool</button></center>
                             </div>
@@ -155,15 +296,40 @@
                         </fieldset>
                     </form>
                 </div>
-<!--                Old html for phone icon and phone number. May put an email here.-->
-<!--                <div class="row gx-4 gx-lg-5 justify-content-center">-->
-<!--                    <div class="col-lg-4 text-center mb-5 mb-lg-0">-->
-<!--                        <i class="bi-phone fs-2 mb-3 text-muted"></i>-->
-<!--                        <div>+1 (555) 123-4567</div>-->
-<!--                    </div>-->
-<!--                </div>-->
         </div>
         </section>
+        <!-- Contact-->
+        <section class="page-section bg-secondary" id="contact">
+            <div class="container px-4 px-lg-5" >
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-lg-8 col-xl-6 text-center">
+                        <h2 class="mt-0">Let's Get In Touch!</h2>
+                        <hr class="divider" />
+                        <p class="mb-5">Have questions or comments about The Solar Calculator? Don't hesitate to reach out!</p>
+                    </div>
+                </div>
+
+
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <form id="fs-frm" name="simple-contact-form" accept-charset="utf-8" action="https://formspree.io/f/mnqynyol" method="post">
+                    <center><div class="col-lg-8 col-xl-6 text-center">
+                        <fieldset id="fs-frm-inputs">
+                            <input class="form-control" id="full-name" type="text" name="name" placeholder="Enter your name..." /><br>
+                            <input class="form-control" id="email-address" type="email" name="_replyto" placeholder="Enter your email..." /><br>
+                            <textarea class="form-control" id="message" name="message" placeholder="Enter your message..." style="height: 10rem" data-sb-validations="required"></textarea><br>
+                            <input type="hidden" name="_subject" id="email-subject" value="Solar Calculator Comment">
+
+                            <div class="d-grid" >
+                                <center><button class="btn btn-primary btn-xl" id="submitButton" type="submit" value="Submit" >Submit</button></center>
+                            </div>
+
+                        </fieldset>
+                    </div></center>
+                    </form>
+                </div>
+        </div>
+        </section>
+
         <!-- Footer-->
         <footer class="bg-light py-5">
             <div class="container px-4 px-lg-5"><div class="small text-center text-muted">Copyright &copy; 2023 - Zinniger & Co.</div></div>
