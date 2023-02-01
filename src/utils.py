@@ -1,43 +1,34 @@
-# ~/src/utils.py
-from config import google_api_sheet_id
-import logging
+# SolarCalculator/src/utils.py
+from src.config import google_api_sheet_id
+from logging import getLogger
 from typing import Union, Dict, Any, List, Type
-from pathlib import PurePath
+from os.path import join
+from pathlib import PurePath, Path
+
+LOGGER = getLogger(__name__ + '.utils')
 
 JSON = Union[Dict[str, Any], List[Any], int, str, float, bool, Type[None]]
+ROOT = Path(__file__).parents[1]
 
 SAMPLES = {
     'sheet': google_api_sheet_id,
 
-    'csv_valid': r'./samples/consumption_valid.csv',
-    'csv_invalid': r'./samples/consumption_invalid.csv',
+    'csv_valid': join(ROOT, 'src/samples/consumption_valid.csv'),
+    'csv_invalid': join(ROOT, 'src/samples/consumption_invalid.csv'),
 
-    'xlsx_valid': r'./samples/consumption_valid.xlsx',
+    'xlsx_valid': join(ROOT, 'src/samples/consumption_valid.xlsx'),
 
-    'input_valid': r'./samples/input_valid.json',
-    'input_invalid_type': r'./samples/input_invalid_type.json',
-    'input_invalid_value': r'./samples/input_invalid_value.json',
+    'input_valid': join(ROOT, 'src/samples/input_valid.json'),
+    'input_valid_form': join(ROOT, 'src/samples/input_valid_form.json'),
+    'input_invalid_type': join(ROOT, 'src/samples/input_invalid_type.json'),
+    'input_invalid_value': join(ROOT, 'src/samples/input_invalid_value.json'),
 
-    'solar_potential_valid': './samples/solar_potential_valid.json',
+    'solar_potential_valid': join(ROOT, 'src/samples/solar_potential_valid.json'),
 
-    'results_valid': r'./samples/results_valid.json',
+    'results_valid': join(ROOT, 'src/samples/results_valid.json'),
 
-    'out': PurePath(fr"./OutputGraphs/RyanZinniger-SolarGraph.png"),
+    'out': PurePath(join(ROOT, 'src/OutputGraphs/RyanZinniger-SolarGraph.png')),
 }
-
-
-def create_logger(file_name: str) -> logging.Logger:
-    """Abstracted method for creating Logger objects."""
-    file_path = f'./logs/{file_name}.log'
-    log_format = '%(name)s - %(filename)s - %(levelname)s[%(funcName)s()]: %(message)s'
-
-    logging.basicConfig(
-        level=logging.INFO,
-        filename=file_path,
-        filemode='w',
-        format=log_format
-    )
-    return logging.getLogger(__name__)
 
 
 def import_json(path: str) -> dict:
@@ -54,13 +45,13 @@ def import_json(path: str) -> dict:
 
     # Raise OSError if the .json does not exist
     if not isfile(path):
-        LOGGER.error(f'The json specified at the following path does not exist: {path}')
+        # LOGGER.error(f'The json specified at the following path does not exist: {path}')
         raise OSError(
             f'The following path to a file does not exist:\n\t{path}'
         )
     # Raise OSError if the file path passed is not a .json
     if not path.endswith('.json'):
-        LOGGER.error(f'The path specified is not to a .json file: {path}')
+        # LOGGER.error(f'The path specified is not to a .json file: {path}')
         raise OSError(
             f'The path provided is a file that is not a .json\n\t{path.split(r"/")[-1]}'
         )
@@ -78,15 +69,15 @@ def export_json(j_obj: JSON, target_directory: str, out_name: str) -> None:
 
     from os.path import isdir
 
-    LOGGER.info(f'Attempting to export the following object to target_directory: {target_directory}')
-    LOGGER.info(j_obj)
+    # LOGGER.info(f'Attempting to export the following object to target_directory: {target_directory}')
+    # LOGGER.info(j_obj)
 
     # Clean up variables passed
     target_directory = target_directory.rstrip(r'/')
     out_name = out_name.rstrip('.json')
     # Raise OSError if the target_directory does not exist
     if not isdir(target_directory):
-        LOGGER.error(f'The target directory specified does not exist: {target_directory}')
+        # LOGGER.error(f'The target directory specified does not exist: {target_directory}')
         raise OSError(
             f'The following target_directory does not exist:\n\t{target_directory}'
         )
@@ -96,33 +87,8 @@ def export_json(j_obj: JSON, target_directory: str, out_name: str) -> None:
     with open(output, 'w') as out:
         out.write(j_obj)
 
-    LOGGER.info(f'The json file was successfully exported: {output}')
-
-
-def get_root(root_name: str) -> str:
-    """Returns the path of the parent directory."""
-
-    from os.path import isdir
-    from pathlib import Path
-
-    LOGGER.info(f'Attempting get_root(parent_name={root_name})')
-
-    # Gets parent path via calling Path().parent and converts it to string via __str__()
-    # Then strips the string at the parent directory and finally appends name to the path
-    root = Path(__file__).parent.parent.__str__().split(root_name)[0] + root_name
-    # Raises OSError if the resulting root path does not exist
-    if not isdir(root):
-        LOGGER.error(f'Root directory found is not a directory: {root}')
-        raise OSError(
-            f'The following root directory at specified parent_name does not exist:\n\t{root}'
-        )
-
-    LOGGER.info(f'get_root() found the following directory to be the root: {root}')
-    return root
-
-
-LOGGER = create_logger(file_name='src')
+    # LOGGER.info(f'The json file was successfully exported: {output}')
 
 
 if __name__ == '__main__':
-    pass
+    print(import_json(SAMPLES['input_valid']))

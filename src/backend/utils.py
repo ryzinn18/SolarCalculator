@@ -1,5 +1,4 @@
-# ~src/backend/utils.py
-from utils import create_logger
+# SolarCalculator/src/backend/utils.py
 from pydantic import conlist, PositiveInt, PositiveFloat
 from typing import TypeVar
 
@@ -25,7 +24,6 @@ FloatListMonthly = conlist(item_type=PositiveFloat, min_items=12, max_items=12)
 AmbiguousListMonthly = conlist(item_type=float, min_items=12, max_items=12)
 PandasDataFrame = TypeVar('PandasDataFrame')
 
-LOGGER = create_logger(file_name='backend')
 
 if __name__ == '__main__':
     pass

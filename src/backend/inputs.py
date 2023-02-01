@@ -1,10 +1,12 @@
 # SolarCalculator/src/backend/inputs.py
 # Handles an input type by calling the correct input function and validates InputData
-
-from backend.utils import IntListMonthly, FloatListMonthly, LOGGER
+from src.utils import import_json, SAMPLES, ROOT
+from src.backend.utils import IntListMonthly, FloatListMonthly
+from logging import getLogger
 from pydantic import BaseModel, PositiveFloat, PositiveInt
 from typing import Literal, Callable, Union
 
+LOGGER = getLogger(__name__)
 
 InputTypes = Literal['csv', 'xlsx', 'sheet', 'form']
 
@@ -340,4 +342,5 @@ def input_handler(input_type: InputTypes, input_source: Union[str, dict]) -> Inp
 
 
 if __name__ == '__main__':
+    # print(import_json(SAMPLES['input_valid_form']))
     pass

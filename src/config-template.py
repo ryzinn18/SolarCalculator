@@ -1,4 +1,4 @@
-# src/config-template.py
+# SolarCalculator/src/config-template.py
 
 # This is a template file.
 # REQUIRED: If you are trying to run this program, you will need to delete '-template' from the module name.

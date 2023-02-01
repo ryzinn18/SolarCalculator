@@ -1,11 +1,13 @@
-# solar_potential.py
+# SolarCalculator/src/backend/solar_potential.py
 # This module gets the solar iridescence data for a given address.
-
-from backend.utils import IntListMonthly, LOGGER
-from config import nrel_api_key
+from src.backend.utils import IntListMonthly
+from src.config import nrel_api_key
+from logging import getLogger
 from requests import get as r_get
 from json import JSONDecodeError
 from pydantic import BaseModel, PositiveInt
+
+LOGGER = getLogger(__name__)
 
 
 class SolarPotentialData(BaseModel):
