@@ -1,16 +1,17 @@
-# ~src/backend/inputs.py
+# SolarCalculator/src/backend/inputs.py
 # Handles an input type by calling the correct input function and validates InputData
 
 from backend.utils import IntListMonthly, FloatListMonthly, LOGGER
 from pydantic import BaseModel, PositiveFloat, PositiveInt
-from typing import Literal, Callable
+from typing import Literal, Callable, Union
 
-InputTypes = Literal['csv', 'xlsx', 'sheet']
+
+InputTypes = Literal['csv', 'xlsx', 'sheet', 'form']
 
 
 class InputError(Exception):
     """Custom exception for an invalid Input keyword"""
-    valid_input_types = ['csv', 'xlsx', 'sheet']
+    valid_input_types = ['csv', 'xlsx', 'sheet', 'form']
 
 
 class InputData(BaseModel):
@@ -103,7 +104,7 @@ def _calculate_cost_per_kwh(cost: IntListMonthly, consumption: IntListMonthly) -
 
 @validate
 def input_csv(file_path: str) -> InputData:
-    """Read a csv at specified path and return InputData model."""
+    """Read a csv at specified path and return InputData object."""
 
     from csv import reader
 
@@ -149,7 +150,7 @@ def input_csv(file_path: str) -> InputData:
 
 @validate
 def input_xlsx(file_path: str) -> InputData:
-    """Read a xlsx at specified path and return InputData model."""
+    """Read a xlsx at specified path and return InputData object."""
 
     from openpyxl import load_workbook
 
@@ -286,7 +287,30 @@ def input_sheets(sheet_id: str) -> InputData:
     return result
 
 
-def input_handler(input_type: InputTypes, input_source: str) -> InputData:
+@validate
+def input_form(input_obj: dict) -> InputData:
+    """Takes web input object and returns InputData object."""
+
+    LOGGER.info(f'Collecting input data from web input object: {input_obj}')
+
+    result = InputData(
+        name=input_obj['name'],
+        address=input_obj['address'],
+        mod_kwh=input_obj['mod_kwh'],
+        consumption_monthly=input_obj['consumption_monthly'],
+        consumption_annual=round(sum(input_obj['consumption_monthly'])),
+        cost_monthly=input_obj['cost_monthly'],
+        cost_annual=round(sum(input_obj['cost_monthly']), 2),
+        cost_per_kwh=_calculate_cost_per_kwh(
+                cost=input_obj['cost_monthly'],
+                consumption=input_obj['consumption_monthly']
+        )
+    )
+    LOGGER.info(f'InputData successfully collected from web input object: {input_obj}')
+    return result
+
+
+def input_handler(input_type: InputTypes, input_source: Union[str, dict]) -> InputData:
     """Handler function. Calls correct input function or raises an InputError. Will catch, log and raise Exceptions."""
 
     LOGGER.info(f'The input handler has been called for type {input_type}')
@@ -298,6 +322,8 @@ def input_handler(input_type: InputTypes, input_source: str) -> InputData:
             input_data = input_xlsx(file_path=input_source)
         elif input_type == 'sheet':
             input_data = input_sheets(sheet_id=input_source)
+        elif input_type == 'form':
+            input_data = input_form(input_obj=input_source)
         else:
             LOGGER.error(f'The input type passed is invalid: {input_type}')
             raise InputError(
