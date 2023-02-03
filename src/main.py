@@ -1,8 +1,17 @@
-# ./src/main.py
+# SolarCalculator/src/main.py
 # This is the main module for running this program
-from utils import SAMPLES
-from backend import inputs as inp, solar_potential as sp, results as res
-from backend.utils import LOGGER
+from src.utils import SAMPLES
+from src.backend import inputs as inp, solar_potential as sp, results as res
+from logging import basicConfig, getLogger, INFO
+
+basicConfig(
+    filename='logs/main.log',
+    level=INFO,
+    format='%(levelname)s:%(filename)s:%(asctime)s:%(funcName)s(): %(message)s',
+    datefmt='%Y/%m/%d-%H.%M.%S',
+    filemode='w',
+)
+LOGGER = getLogger(__name__)
 
 
 def main():
@@ -13,8 +22,9 @@ def main():
         input_type='csv',
         input_source=SAMPLES['csv_valid']
     )
-    LOGGER.info(f'InputData successfully received for name: {data_input.name}')
 
+    LOGGER.info(f'InputData successfully received for name: {data_input.name}')
+    print('here')
     # Get Solar Potential data
     data_solar_potential = sp.get_solar_potential(
         address=data_input.address,

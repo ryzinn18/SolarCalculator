@@ -1,9 +1,10 @@
-# ~/src/backend/results.py
+# SolarCalculator/src/backend/results.py
 # Integrates InputData and SolarPotentialData into Results data object and creates outputs
-from utils import get_root, JSON
-from backend.utils import MONTHS_MAP, IntListMonthly, FloatListMonthly, AmbiguousListMonthly, LOGGER
-from backend.solar_potential import SolarPotentialData
-from backend.inputs import InputData
+from src.utils import JSON, ROOT
+from src.backend.utils import MONTHS_MAP, IntListMonthly, FloatListMonthly, AmbiguousListMonthly#, LOGGER
+from src.backend.solar_potential import SolarPotentialData
+from src.backend.inputs import InputData
+from logging import getLogger
 from csv import writer as csv_writer
 from os import PathLike
 from os.path import join as os_join
@@ -13,6 +14,8 @@ import matplotlib.pyplot as plt
 from pandas import DataFrame
 from pydantic import BaseModel, PositiveInt, FilePath
 from typing import Union, Sequence, Collection, Callable, Literal
+
+LOGGER = getLogger(__name__)
 
 
 class Results(BaseModel):
@@ -43,7 +46,7 @@ class OutputPath:
                  root='SolarCalculator'):
         """Simple class for creating specific output paths."""
 
-        self.path = PurePath(os_join(get_root(root_name=root), 'Outputs', dir_name, f'{name}-{file}.{ext}'))
+        self.path = PurePath(os_join(ROOT, 'Outputs', dir_name, f'{name}-{file}.{ext}'))
 
 
 def _average(iterable: Union[Sequence, Collection]) -> int:
