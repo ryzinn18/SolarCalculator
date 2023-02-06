@@ -1,9 +1,17 @@
 # SolarCalculator/src/utils.py
 from src.config import google_api_sheet_id
-from logging import getLogger
+from logging import getLogger, basicConfig, INFO
 from typing import Union, Dict, Any, List, Type
 from os.path import join
 from pathlib import PurePath, Path
+
+basicConfig(
+    filename='logs/main.log',
+    level=INFO,
+    format='%(levelname)s:%(filename)s:%(asctime)s:%(funcName)s(): %(message)s',
+    datefmt='%Y/%m/%d-%H.%M.%S',
+    filemode='w',
+)
 
 LOGGER = getLogger(__name__ + '.utils')
 
