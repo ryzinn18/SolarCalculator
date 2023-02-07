@@ -1,13 +1,15 @@
 {
-	"name": "Ryan",
-	"address": "3940 State Street, 93105",
-	"mod_kwh": 0.4,
-	"consumption_monthly": [
+   "type": "form",
+   "form": {
+      "name": "Ryan",
+      "address": "3940 State Street, 93105",
+      "mod_kwh": 0.4,
+      "consumption_monthly": [
         820,
         780,
         760,
         740,
-        740,
+        720,
         710,
         705,
         715,
@@ -15,9 +17,9 @@
         702,
         750,
         780
-	],
-	"cost_monthly": [
-		155.8,
+      ],
+      "cost_monthly": [
+        155.8,
         148.2,
         144.4,
         140.6,
@@ -29,6 +31,6 @@
         133.38,
         142.5,
         148.2
-	],
-  "type": "form"
+      ]
+    }
 }

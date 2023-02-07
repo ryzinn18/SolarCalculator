@@ -1,7 +1,7 @@
 # SolarCalculator/src/main.py
 # This is the main module for running this program locally.
 # This module also configures the logger.
-from src.utils import SAMPLES
+from src.utils import SAMPLES, import_json
 from src.backend import inputs as inp, solar_potential as sp, results as res
 from logging import getLogger
 
@@ -13,8 +13,7 @@ def main():
 
     # Get Input data
     data_input = inp.input_handler(
-        input_type='csv',
-        input_source=SAMPLES['csv_valid']
+        event=import_json(SAMPLES['event_valid_form'])
     )
 
     LOGGER.info(f'InputData successfully received for name: {data_input.name}')

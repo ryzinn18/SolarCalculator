@@ -1,0 +1,4 @@
+{
+  "type": "csv",
+  "csv_source": "<paste absolute path to consumption_valid.csv>"
+}

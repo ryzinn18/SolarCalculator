@@ -1,10 +1,10 @@
 # SolarCalculator/src/backend/inputs.py
 # Handles an input type by calling the correct input function and validates InputData
-from src.utils import import_json, SAMPLES, ROOT
+from src.utils import import_json, SAMPLES
 from src.backend.utils import IntListMonthly, FloatListMonthly
 from logging import getLogger
 from pydantic import BaseModel, PositiveFloat, PositiveInt
-from typing import Literal, Callable, Union
+from typing import Literal, Callable
 
 LOGGER = getLogger(__name__)
 
@@ -104,6 +104,11 @@ def _calculate_cost_per_kwh(cost: IntListMonthly, consumption: IntListMonthly) -
     return round(sum(monthly_cost_per_kwh) / len(monthly_cost_per_kwh), 2)
 
 
+def _clean_name(name: str) -> str:
+    """Remove all spaces and non-alphanumeric characters from name."""
+    return ''.join(s for s in name if s.isalnum())
+
+
 @validate
 def input_csv(file_path: str) -> InputData:
     """Read a csv at specified path and return InputData object."""
@@ -136,7 +141,7 @@ def input_csv(file_path: str) -> InputData:
 
     # Instantiate InputData model
     result = InputData(
-        name=user_data[0].replace(' ', '').replace('.', ''),
+        name=_clean_name(name=user_data[0]),
         address=user_data[1],
         mod_kwh=_validate_mod_kwh(in_data=user_data[2]),
         consumption_monthly=consumption,
@@ -179,7 +184,7 @@ def input_xlsx(file_path: str) -> InputData:
 
     # Instantiate InputData model
     result = InputData(
-        name=user_data[0].replace(' ', '').replace('.', ''),
+        name=_clean_name(name=user_data[0]),
         address=user_data[1],
         mod_kwh=_validate_mod_kwh(in_data=user_data[2]),
         consumption_monthly=consumption,
@@ -193,7 +198,7 @@ def input_xlsx(file_path: str) -> InputData:
     return result
 
 
-#@validate
+# @validate
 def input_sheets(sheet_id: str) -> InputData:
     """
     _authenticate_google_api_token() script from below and updated slightly by me.
@@ -275,7 +280,7 @@ def input_sheets(sheet_id: str) -> InputData:
 
     # Instantiate InputData model
     result = InputData(
-        name=user_data[0][0].replace(' ', '').replace('.', ''),
+        name=_clean_name(user_data[0][0]),
         address=user_data[1][0],
         mod_kwh=_validate_mod_kwh(in_data=user_data[2][0]),
         consumption_monthly=consumption,
@@ -296,7 +301,7 @@ def input_form(input_obj: dict) -> InputData:
     LOGGER.info(f'Collecting input data from web input object: {input_obj}')
 
     result = InputData(
-        name=input_obj['name'],
+        name=_clean_name(input_obj['name']),
         address=input_obj['address'],
         mod_kwh=input_obj['mod_kwh'],
         consumption_monthly=input_obj['consumption_monthly'],
@@ -304,34 +309,45 @@ def input_form(input_obj: dict) -> InputData:
         cost_monthly=input_obj['cost_monthly'],
         cost_annual=round(sum(input_obj['cost_monthly']), 2),
         cost_per_kwh=_calculate_cost_per_kwh(
-                cost=input_obj['cost_monthly'],
-                consumption=input_obj['consumption_monthly']
+            cost=input_obj['cost_monthly'],
+            consumption=input_obj['consumption_monthly']
         )
     )
     LOGGER.info(f'InputData successfully collected from web input object: {input_obj}')
     return result
 
 
-def input_handler(input_type: InputTypes, input_source: Union[str, dict]) -> InputData:
+def input_handler(event: dict) -> InputData:
     """Handler function. Calls correct input function or raises an InputError. Will catch, log and raise Exceptions."""
 
-    LOGGER.info(f'The input handler has been called for type {input_type}')
+    LOGGER.info(f'The input_handler() has been called for event:')
+    LOGGER.info(event)
 
+    # Try clause to ensure the event has attribute 'type'
+    try:
+        event['type']
+    except KeyError as e:
+        LOGGER.error(f'The event passed to the input_handler() does not have attribute "type".')
+        raise e
+    else:
+        input_type = event['type']
+        LOGGER.info(f'The event type has been found to be: {input_type}')
+
+    # Try clause to call correct handler function. Raise and log error if failed.
     try:
         if input_type == 'csv':
-            input_data = input_csv(file_path=input_source)
+            input_data = input_csv(file_path=event['csv_source'])
         elif input_type == 'xlsx':
-            input_data = input_xlsx(file_path=input_source)
+            input_data = input_xlsx(file_path=event['xlsx_source'])
         elif input_type == 'sheet':
-            input_data = input_sheets(sheet_id=input_source)
+            input_data = input_sheets(sheet_id=event['sheet_id'])
         elif input_type == 'form':
-            input_data = input_form(input_obj=input_source)
+            input_data = input_form(input_obj=event['form'])
         else:
             LOGGER.error(f'The input type passed is invalid: {input_type}')
             raise InputError(
                 f"The input '{input_type}' is invalid.\n"
-                + f"You must enter one of the following input types: {*InputError.valid_input_types,}"
-            )
+                + f"You must enter one of the following input types: {*InputError.valid_input_types,}")
     except Exception as e:
         LOGGER.exception(e)
         raise e
@@ -342,5 +358,5 @@ def input_handler(input_type: InputTypes, input_source: Union[str, dict]) -> Inp
 
 
 if __name__ == '__main__':
-    # print(import_json(SAMPLES['input_valid_form']))
+    # print(input_handler(import_json(SAMPLES['event_valid_csv'])))
     pass

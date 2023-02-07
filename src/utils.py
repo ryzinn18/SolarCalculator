@@ -27,9 +27,13 @@ SAMPLES = {
     'xlsx_valid': join(ROOT, 'src/samples/consumption_valid.xlsx'),
 
     'input_valid': join(ROOT, 'src/samples/input_valid.json'),
-    'input_valid_form': join(ROOT, 'src/samples/input_valid_form.json'),
     'input_invalid_type': join(ROOT, 'src/samples/input_invalid_type.json'),
     'input_invalid_value': join(ROOT, 'src/samples/input_invalid_value.json'),
+
+    'event_valid_form': join(ROOT, 'src/samples/event_valid_form.json'),
+    'event_valid_csv': join(ROOT, 'src/samples/event_valid_csv.json'),
+    'event_valid_xlsx': join(ROOT, 'src/samples/event_valid_xlsx.json'),
+    'event_valid_sheet': join(ROOT, 'src/samples/event_valid_sheet.json'),
 
     'solar_potential_valid': join(ROOT, 'src/samples/solar_potential_valid.json'),
 
