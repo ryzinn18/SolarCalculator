@@ -55,6 +55,12 @@ def validate(function: Callable) -> Callable:
                 f"One or more of the values entered are invalid.\n"
                 + "Please review the values entered and try again."
             )
+        except TypeError:
+            LOGGER.error(f'One or more of the data types passed was invalid.', exc_info=True)
+            raise TypeError(
+                "One or more of the values entered is of an invalid data type.\n"
+                + "Please review the values entered and try again."
+            )
         except Exception as e:
             LOGGER.error(e, exc_info=True)
             raise e
