@@ -39,11 +39,12 @@ class Results(BaseModel):
 
 
 class OutputPath:
+    __slots__ = 'path'
+
     def __init__(self, name: str,
                  file: Literal['EnergyGraph', 'CostGraph', 'OutputData'],
                  dir_name: Literal['Graphs', 'DataFiles'],
-                 ext: Literal['png', 'csv'],
-                 root='SolarCalculator'):
+                 ext: Literal['png', 'csv']):
         """Simple class for creating specific output paths."""
 
         self.path = PurePath(os_join(ROOT, 'Outputs', dir_name, f'{name}-{file}.{ext}'))
