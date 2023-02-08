@@ -1,7 +1,7 @@
 # SolarCalculator/src/backend/results.py
 # Integrates InputData and SolarPotentialData into Results data object and creates outputs
 from src.utils import JSON, ROOT
-from src.backend.utils import MONTHS_MAP, IntListMonthly, FloatListMonthly, AmbiguousListMonthly#, LOGGER
+from src.backend.utils import MONTHS_MAP, IntListMonthly, FloatListMonthly, AmbiguousListMonthly
 from src.backend.solar_potential import SolarPotentialData
 from src.backend.inputs import InputData
 from logging import getLogger
