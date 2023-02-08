@@ -4,11 +4,9 @@ from src.utils import import_json, SAMPLES
 from src.backend.utils import IntListMonthly, FloatListMonthly
 from logging import getLogger
 from pydantic import BaseModel, PositiveFloat, PositiveInt
-from typing import Literal, Callable
+from typing import Callable
 
 LOGGER = getLogger(__name__)
-
-InputTypes = Literal['csv', 'xlsx', 'sheet', 'form']
 
 
 class InputError(Exception):
