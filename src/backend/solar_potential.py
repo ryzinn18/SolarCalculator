@@ -62,6 +62,7 @@ def _get_iridescence_obj(params: dict, nrel_token: str) -> dict:
             # If encountered, recall the get function a max of 3 times.
             LOGGER.error('JSONDecodeError encountered. Attempting the call again', exc_info=True)
             i += 1
+            continue
         except Exception as e:
             # Log and raise the appropriate exception if encountered.
             LOGGER.error(e, exc_info=True)
