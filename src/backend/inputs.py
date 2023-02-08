@@ -323,38 +323,34 @@ def input_handler(event: dict) -> InputData:
     LOGGER.info(f'The input_handler() has been called for event:')
     LOGGER.info(event)
 
-    # Try clause to ensure the event has attribute 'type'
-    try:
-        event['type']
-    except KeyError as e:
+    # Ensure the event has attribute 'type', raise and log error if not.
+    if not event.get('type'):
         LOGGER.error(f'The event passed to the input_handler() does not have attribute "type".')
-        raise e
-    else:
-        input_type = event['type']
-        LOGGER.info(f'The event type has been found to be: {input_type}')
+        LOGGER.error(event)
+        raise KeyError('The event passed to the input_handler() does not have attribute "type".')
 
-    # Try clause to call correct handler function. Raise and log error if failed.
-    try:
-        if input_type == 'csv':
-            input_data = input_csv(file_path=event['csv_source'])
-        elif input_type == 'xlsx':
-            input_data = input_xlsx(file_path=event['xlsx_source'])
-        elif input_type == 'sheet':
-            input_data = input_sheets(sheet_id=event['sheet_id'])
-        elif input_type == 'form':
-            input_data = input_form(input_obj=event['form'])
-        else:
-            LOGGER.error(f'The input type passed is invalid: {input_type}')
-            raise InputError(
-                f"The input '{input_type}' is invalid.\n"
-                + f"You must enter one of the following input types: {*InputError.valid_input_types,}")
-    except Exception as e:
-        LOGGER.exception(e)
-        raise e
+    input_type = event['type']
+    LOGGER.info(f'The event type has been found to be: {input_type}')
+
+    # If/elif/else clause to call correct handler function. Raise and log error if no input function is called.
+    if input_type == 'csv':
+        input_data = input_csv(file_path=event['csv_source'])
+    elif input_type == 'xlsx':
+        input_data = input_xlsx(file_path=event['xlsx_source'])
+    elif input_type == 'sheet':
+        input_data = input_sheets(sheet_id=event['sheet_id'])
+    elif input_type == 'form':
+        input_data = input_form(input_obj=event['form'])
     else:
-        LOGGER.info(f'InputData successfully received via {input_type} for {input_data.name}')
-        LOGGER.info(input_data)
-        return input_data
+        LOGGER.error(f'The input type passed is invalid: {input_type}')
+        raise InputError(
+            f"The input '{input_type}' is invalid.\n"
+            + f"You must enter one of the following input types: {*InputError.valid_input_types,}"
+        )
+
+    LOGGER.info(f'InputData successfully received via {input_type} for {input_data.name}')
+    LOGGER.info(input_data)
+    return input_data
 
 
 if __name__ == '__main__':
