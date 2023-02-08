@@ -13,7 +13,7 @@ def main():
 
     # Get Input data
     data_input = inp.input_handler(
-        event=import_json(SAMPLES['event_valid_form'])
+        event=import_json(SAMPLES['event_valid_csv'])
     )
 
     LOGGER.info(f'InputData successfully received for name: {data_input.name}')
