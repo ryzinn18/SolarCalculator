@@ -137,3 +137,5 @@ src/backend/logs/
 src/samples/event_valid_csv.json
 src/samples/event_valid_xlsx.json
 src/samples/event_valid_sheet.json
+.archive/
+deploy/

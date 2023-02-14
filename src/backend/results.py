@@ -1,41 +1,17 @@
 # SolarCalculator/src/backend/results.py
 # Integrates InputData and SolarPotentialData into Results data object and creates outputs
-from src.utils import JSON, ROOT
-from src.backend.utils import MONTHS_MAP, IntListMonthly, FloatListMonthly, AmbiguousListMonthly
-from src.backend.solar_potential import SolarPotentialData
-from src.backend.inputs import InputData
+import matplotlib.pyplot as plt
+from pandas import DataFrame
+from utils import Results, EventFinal, ROOT, MONTHS_MAP, IntListMonthly, FloatListMonthly
 from logging import getLogger
 from csv import writer as csv_writer
 from os import PathLike
 from os.path import join as os_join
 from pathlib import PurePath
 from math import ceil
-import matplotlib.pyplot as plt
-from pandas import DataFrame
-from pydantic import BaseModel, PositiveInt, FilePath
 from typing import Union, Sequence, Collection, Callable, Literal
 
 LOGGER = getLogger(__name__)
-
-
-class Results(BaseModel):
-    # Required
-    name: str
-    address: str
-    actual_consumption_monthly: IntListMonthly
-    actual_cost_monthly: FloatListMonthly
-    potential_production_monthly: IntListMonthly
-    potential_cost_monthly: AmbiguousListMonthly
-    savings_monthly: FloatListMonthly
-    cost_reduction_monthly: IntListMonthly
-    cost_reduction_average: int
-    energy_graph_path: FilePath
-    cost_graph_path: FilePath
-    results_data_json: JSON
-    results_csv_path: FilePath
-    mod_quantity: PositiveInt
-    input_data: InputData
-    solar_potential_data: SolarPotentialData
 
 
 class OutputPath:
@@ -57,7 +33,7 @@ def _average(iterable: Union[Sequence, Collection]) -> int:
 
 
 def get_data_df(
-        input_data: InputData, solar_potential_monthly: IntListMonthly, potential_cost_monthly: FloatListMonthly,
+        input_data: dict, solar_potential_monthly: IntListMonthly, potential_cost_monthly: FloatListMonthly,
         savings_monthly: FloatListMonthly, cost_reduction_monthly: FloatListMonthly) -> DataFrame:
     """Creates a pandas data frame with all the input, solar, and analysis data and their annual sums."""
 
@@ -65,8 +41,8 @@ def get_data_df(
 
     result = DataFrame(data={  # data type: [list monthly] + [annual total/annual average]
         'Month': list(MONTHS_MAP.values()) + ['Annual'],
-        'Consumption kWh': input_data.consumption_monthly + [input_data.consumption_annual],
-        'Cost $': input_data.cost_monthly + [input_data.cost_annual],
+        'Consumption kWh': input_data.get('consumption_monthly') + [input_data.get('consumption_annual')],
+        'Cost $': input_data.get('cost_monthly') + [input_data.get('cost_annual')],
         'Potential kWh': solar_potential_monthly + [sum(solar_potential_monthly)],
         'Potential Cost $': potential_cost_monthly + [sum(potential_cost_monthly)],
         'Savings $': savings_monthly + [sum(savings_monthly)],
@@ -158,10 +134,10 @@ def create_out_csv(header: dict, data_df: DataFrame, footer: dict,
     LOGGER.info(f'Output csv successfully created: {out_path}')
 
 
-def get_results(input_data: InputData, solar_potential_data: SolarPotentialData) -> Results:
+def get_results(input_data: dict, solar_data: dict) -> Results:
     """Create graphs, calculate savings and mod quantity, and return Results data object."""
 
-    LOGGER.info(f'Generating ResultsData for name: {input_data.name}')
+    LOGGER.info(f'Generating ResultsData for uid: {input_data.get("uid")}')
 
     def _helper_calculate(func: Callable, zipped: tuple, arg3=None) -> FloatListMonthly:
         """Helper to clean up calculations for different monthly and annual figures."""
@@ -173,35 +149,35 @@ def get_results(input_data: InputData, solar_potential_data: SolarPotentialData)
         return out
 
     # Declare output paths
-    path_graph_cost = OutputPath(name=input_data.name, dir_name='Graphs', file='CostGraph', ext='png').path
-    path_graph_energy = OutputPath(name=input_data.name, dir_name='Graphs', file='EnergyGraph', ext='png').path
-    path_csv_out = OutputPath(name=input_data.name, dir_name='DataFiles', file='OutputData', ext='csv').path
+    path_graph_cost = OutputPath(name=input_data.get('name'), dir_name='Graphs', file='CostGraph', ext='png').path
+    path_graph_energy = OutputPath(name=input_data.get('name'), dir_name='Graphs', file='EnergyGraph', ext='png').path
+    path_csv_out = OutputPath(name=input_data.get('name'), dir_name='DataFiles', file='OutputData', ext='csv').path
 
     # Calculate Potential Cost, Savings, and Cost Reduction
     potential_cost_monthly = _helper_calculate(
         func=lambda a1, a2, a3: round((a1 - a2) * a3, 2),
-        zipped=zip(input_data.consumption_monthly, solar_potential_data.solar_potential_monthly),
-        arg3=input_data.cost_per_kwh
+        zipped=zip(input_data.get('consumption_monthly'), solar_data.get('solar_potential_monthly')),
+        arg3=input_data.get('cost_per_kwh')
     )
     savings_monthly = _helper_calculate(
         func=lambda a1, a2, a3: round((a1 - a2), 2),
-        zipped=zip(input_data.cost_monthly, potential_cost_monthly)
+        zipped=zip(input_data.get('cost_monthly'), potential_cost_monthly)
     )
     cost_reduction_monthly = _helper_calculate(
         func=lambda a1, a2, a3: round(((a1 / a2) * 100), 2),
-        zipped=zip(savings_monthly, input_data.cost_monthly)
+        zipped=zip(savings_monthly, input_data.get('cost_monthly'))
     )
     # Create DataFrame with all data for graphing/writing outputs
     results_df = get_data_df(
         input_data=input_data,
-        solar_potential_monthly=solar_potential_data.solar_potential_monthly,
+        solar_potential_monthly=solar_data.get('solar_potential_monthly'),
         potential_cost_monthly=potential_cost_monthly,
         savings_monthly=savings_monthly,
         cost_reduction_monthly=cost_reduction_monthly,
     )
     # Create cost comparison graph
     create_comparison_graph(
-        title=f"{input_data.name}'s Actual vs Potential Cost",
+        title=f"{input_data.get('name')}'s Actual vs Potential Cost",
         df1=results_df['Cost $'].round(),
         df2=results_df['Potential Cost $'].round(),
         label1='Actual Cost',
@@ -212,35 +188,36 @@ def get_results(input_data: InputData, solar_potential_data: SolarPotentialData)
     )
     # Create consumption vs production graph
     create_comparison_graph(
-        title=f"{input_data.name}'s Energy Consumption vs Production",
+        title=f"{input_data.get('name')}'s Energy Consumption vs Production",
         df1=results_df['Consumption kWh'],
         df2=results_df['Potential kWh'],
         label1='Energy Consumption',
         label2='Potential Energy Production',
-        y_label=solar_potential_data.units_solar_potential,
+        y_label=solar_data.get('units_solar_potential'),
         out_path=path_graph_energy,
         graph_type='energy'
     )
     # Create the output csv
     create_out_csv(
-        header={'Name': input_data.name,
-                'Address': input_data.address,
-                'Cost/kWh': input_data.cost_per_kwh,
+        header={'Name': input_data.get('name'),
+                'Address': input_data.get('address'),
+                'Cost/kWh': input_data.get('cost_per_kwh'),
                 '': ''},  # Blank Row
         data_df=results_df,
         footer={'': '',  # Blank Row
-                'Note:': solar_potential_data.note,
-                'Potential kWh Source:': solar_potential_data.source},
+                'Note:': solar_data.get('note'),
+                'Potential kWh Source:': solar_data.get('source')},
         out_path=path_csv_out
     )
 
     # Create the Results data object
     result = Results(
-        name=input_data.name,
-        address=input_data.address,
-        actual_consumption_monthly=input_data.consumption_monthly,
-        actual_cost_monthly=input_data.cost_monthly,
-        potential_production_monthly=solar_potential_data.solar_potential_monthly,
+        uid=input_data.get('uid'),
+        name=input_data.get('name'),
+        address=input_data.get('address'),
+        actual_consumption_monthly=input_data.get('consumption_monthly'),
+        actual_cost_monthly=input_data.get('cost_monthly'),
+        potential_production_monthly=solar_data.get('solar_potential_monthly'),
         potential_cost_monthly=potential_cost_monthly,
         savings_monthly=savings_monthly,
         cost_reduction_monthly=cost_reduction_monthly,
@@ -249,13 +226,34 @@ def get_results(input_data: InputData, solar_potential_data: SolarPotentialData)
         cost_graph_path=path_graph_cost,
         results_data_json=results_df.to_json(indent=4),
         results_csv_path=path_csv_out,
-        mod_quantity=ceil(solar_potential_data.needed_kwh / input_data.mod_kwh),
-        input_data=input_data,
-        solar_potential_data=solar_potential_data
+        mod_quantity=ceil(solar_data.get('needed_kwh') / input_data.get('mod_kwh')),
     )
 
     LOGGER.info(f'Results data successfully created and validated: {result}')
     return result
+
+
+def results_handler(event: dict, context) -> dict:
+    """AWS Lambda Handler function for getting final results event object."""
+
+    LOGGER.info(f'Called Lambda handler function for getting input data event for uid: {event["uid"]}')
+
+    # Handle getting the necessary data
+    input_data = event['input_data']
+    solar_data = event['solar_data']
+    results_data = get_results(
+        input_data=input_data,
+        solar_data=solar_data
+    )
+    out_event = EventFinal(
+        uid=event['uid'],
+        input_data=input_data,
+        solar_data=solar_data,
+        results_data=results_data
+    )
+
+    LOGGER.info(f'Lambda Handler for results data successfully executed for uid: {event["uid"]}')
+    return out_event.dict()
 
 
 if __name__ == '__main__':

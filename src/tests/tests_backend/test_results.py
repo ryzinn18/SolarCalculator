@@ -1,6 +1,6 @@
 # tests.test_results.py
 from utils import import_json, SAMPLES
-from backend import input_handler, get_solar_potential, get_data_df, create_comparison_graph, create_out_csv, \
+from backend import get_inputs, get_solar_potential, get_data_df, create_comparison_graph, create_out_csv, \
     get_results, Results
 from backend.results import _average
 from pandas import DataFrame
@@ -12,7 +12,7 @@ _INPUT_INVALID = import_json(SAMPLES['input_invalid_value'])
 _SOLAR_POTENTIAL_VALID = import_json(SAMPLES['solar_potential_valid'])
 _RESULT_VALID = import_json(SAMPLES['results_valid'])
 
-_MODEL_INPUT = input_handler(input_type='csv', input_source=SAMPLES['csv_valid'])
+_MODEL_INPUT = get_inputs(input_type='csv', input_source=SAMPLES['csv_valid'])
 _MODEL_SOLAR = get_solar_potential(address=_INPUT_VALID['address'], annual_consumption=_INPUT_VALID['consumption_annual'])
 
 _TEST_DF = get_data_df(
@@ -99,6 +99,6 @@ def test_get_results():
     WHEN get_results() is called on those valid data objects
     THEN Return a valid ResultsData object
     """
-    test_results = get_results(input_data=_MODEL_INPUT, solar_potential_data=_MODEL_SOLAR)
+    test_results = get_results(input_data=_MODEL_INPUT, solar_data=_MODEL_SOLAR)
 
     assert isinstance(test_results, Results)

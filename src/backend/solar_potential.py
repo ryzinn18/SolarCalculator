@@ -1,26 +1,13 @@
 # SolarCalculator/src/backend/solar_potential.py
 # This module gets the solar iridescence data for a given address.
-from src.backend.utils import IntListMonthly
-from src.config import nrel_api_key
-from logging import getLogger
 from requests import get as r_get
+from utils import SolarPotentialData, EventReadyForResults
+from config import nrel_api_key
+from logging import getLogger
 from json import JSONDecodeError
-from pydantic import BaseModel, PositiveInt
+
 
 LOGGER = getLogger(__name__)
-
-
-class SolarPotentialData(BaseModel):
-    # Required
-    address: str
-    solar_potential_monthly: IntListMonthly
-    solar_potential_annual: PositiveInt
-    needed_kwh: PositiveInt
-    # Default
-    note = "Solar potential (kWh) reported over a 30 year average."
-    source = "pvwatts.nrel.gov/pvwatts.php"
-    units_solar_potential = "kiloWattHours"
-    sym_solar_potential = "kWh"
 
 
 def _get_params(capacity: int, address: str,
@@ -78,7 +65,7 @@ def _get_iridescence_obj(params: dict, nrel_token: str) -> dict:
     raise Exception('After requesting 3 times, the nrel API get request still failed due to a JSONDecodeError.')
 
 
-def get_solar_potential(address: str, annual_consumption: int) -> SolarPotentialData:
+def get_solar_potential(input_data: dict) -> SolarPotentialData:
     """
     Runs through steps to get solar potential data for the address provided:
     1. Get normalized data:
@@ -90,10 +77,18 @@ def get_solar_potential(address: str, annual_consumption: int) -> SolarPotential
         - Get params with capacity == needed kWh (actual)
     4. Validate actual data into SolarPotentialData model.
 
-    :param address: String of the address. Best as "<street number> <street name>, <zip code>"
-    :param annual_consumption: This is the actual annual consumption. Generated from inputs.py
+    :param input_data: Dict (json) object passed to this function containing address and consumption_annual attributes.
     :return SolarPotentialData model
     """
+
+    LOGGER.info(f'solar_potential_handler() called for given event: {input_data}')
+
+    if not input_data.get('uid') or not input_data.get('address') or not input_data.get('consumption_annual'):
+        LOGGER.error(f'The event passed to solar_potential_handler() does not have necessary attribute(s).')
+        raise KeyError('The event passed to solar_potential_handler() does not have necessary attribute(s).')
+
+    address = input_data.get('address')
+    annual_consumption = input_data.get('consumption_annual')
 
     LOGGER.info(f'Attempting to retrieve the solar potential data for the following address: {address}')
 
@@ -110,14 +105,34 @@ def get_solar_potential(address: str, annual_consumption: int) -> SolarPotential
     actual_monthly = actual_outputs.get('ac_monthly')
     # 4. Validate actual data into SolarPotentialData model.
     result = SolarPotentialData(
+        uid=input_data.get('uid'),
         address=address,
         solar_potential_monthly=[round(elem) for elem in actual_monthly],
         solar_potential_annual=round(float(actual_outputs.get('ac_annual')), 2),
-        needed_kwh=needed_kwh
+        needed_kwh=needed_kwh,
+        input_data=input_data
     )
 
     LOGGER.info(f'Solar data retrieved and validated: {result}')
     return result
+
+
+def solar_potential_handler(event: dict, context) -> dict:
+    """AWS Lambda Handler for calling get_solar_potential() and returning proper event object."""
+
+    LOGGER.info(f'Called Lambda Handler function for getting solar data event for uid: {event["uid"]}')
+
+    # Handle getting the necessary data
+    input_data = event['input_data']
+    solar_data = get_solar_potential(input_data=input_data)
+    out_event = EventReadyForResults(
+        uid=event['uid'],
+        input_data=input_data,
+        solar_data=solar_data
+    )
+
+    LOGGER.info(f'Lambda Handler for solar data successfully executed for uid: {event["uid"]}')
+    return out_event.dict()
 
 
 if __name__ == '__main__':

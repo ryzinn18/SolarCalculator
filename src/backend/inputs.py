@@ -1,36 +1,19 @@
 # SolarCalculator/src/backend/inputs.py
 # Handles an input type by calling the correct input function and validates InputData
-from src.utils import import_json, SAMPLES
-from src.backend.utils import IntListMonthly, FloatListMonthly
+# from src.utils import import_json, SAMPLES
+from pydantic import PositiveFloat
+from utils import IntListMonthly, InputData, EventReadyForSolar
 from logging import getLogger
-from pydantic import BaseModel, PositiveFloat, PositiveInt
 from typing import Callable
+from datetime import datetime as dt
 
 LOGGER = getLogger(__name__)
+NOW = dt.now().__str__()
 
 
 class InputError(Exception):
     """Custom exception for an invalid Input keyword"""
     valid_input_types = ['csv', 'xlsx', 'sheet', 'form']
-
-
-class InputData(BaseModel):
-    # Required
-    name: str
-    address: str
-    mod_kwh: PositiveFloat
-    consumption_monthly: IntListMonthly
-    consumption_annual: PositiveInt
-    cost_monthly: FloatListMonthly
-    cost_annual: PositiveFloat
-    cost_per_kwh: PositiveFloat
-    # Optional
-    note: str = None
-    # Default
-    units_consumption = "kiloWattHours"
-    units_cost = "Dollars"
-    sym_consumption = "kWh"
-    sym_cost = "$"
 
 
 def validate(function: Callable) -> Callable:
@@ -145,6 +128,7 @@ def input_csv(file_path: str) -> InputData:
 
     # Instantiate InputData model
     result = InputData(
+        uid=_clean_name(user_data[0]) + NOW,
         name=_clean_name(name=user_data[0]),
         address=user_data[1],
         mod_kwh=_validate_mod_kwh(in_data=user_data[2]),
@@ -188,6 +172,7 @@ def input_xlsx(file_path: str) -> InputData:
 
     # Instantiate InputData model
     result = InputData(
+        uid=_clean_name(user_data[0]) + NOW,
         name=_clean_name(name=user_data[0]),
         address=user_data[1],
         mod_kwh=_validate_mod_kwh(in_data=user_data[2]),
@@ -284,6 +269,7 @@ def input_sheets(sheet_id: str) -> InputData:
 
     # Instantiate InputData model
     result = InputData(
+        uid=_clean_name(user_data[0][0]) + NOW,
         name=_clean_name(user_data[0][0]),
         address=user_data[1][0],
         mod_kwh=_validate_mod_kwh(in_data=user_data[2][0]),
@@ -305,6 +291,7 @@ def input_form(input_obj: dict) -> InputData:
     LOGGER.info(f'Collecting input data from web input object: {input_obj}')
 
     result = InputData(
+        uid=_clean_name(input_obj['name']) + NOW,
         name=_clean_name(input_obj['name']),
         address=input_obj['address'],
         mod_kwh=input_obj['mod_kwh'],
@@ -321,30 +308,23 @@ def input_form(input_obj: dict) -> InputData:
     return result
 
 
-def input_handler(event: dict) -> InputData:
-    """Handler function. Calls correct input function or raises an InputError. Will catch, log and raise Exceptions."""
+def get_inputs(input_event: dict) -> InputData:
+    """Calls correct input function or raises an InputError. Will catch, log and raise Exceptions."""
 
-    LOGGER.info(f'The input_handler() has been called for event:')
-    LOGGER.info(event)
+    LOGGER.info(f'The input_handler() has been called for event: {input_event}')
 
-    # Ensure the event has attribute 'type', raise and log error if not.
-    if not event.get('type'):
-        LOGGER.error(f'The event passed to the input_handler() does not have attribute "type".')
-        LOGGER.error(event)
-        raise KeyError('The event passed to the input_handler() does not have attribute "type".')
-
-    input_type = event['type']
+    input_type = input_event['type']
     LOGGER.info(f'The event type has been found to be: {input_type}')
 
     # If/elif/else clause to call correct handler function. Raise and log error if no input function is called.
     if input_type == 'csv':
-        input_data = input_csv(file_path=event['csv_source'])
+        input_data = input_csv(file_path=input_event['csv_source'])
     elif input_type == 'xlsx':
-        input_data = input_xlsx(file_path=event['xlsx_source'])
+        input_data = input_xlsx(file_path=input_event['xlsx_source'])
     elif input_type == 'sheet':
-        input_data = input_sheets(sheet_id=event['sheet_id'])
+        input_data = input_sheets(sheet_id=input_event['sheet_id'])
     elif input_type == 'form':
-        input_data = input_form(input_obj=event['form'])
+        input_data = input_form(input_obj=input_event['form'])
     else:
         LOGGER.error(f'The input type passed is invalid: {input_type}')
         raise InputError(
@@ -355,6 +335,26 @@ def input_handler(event: dict) -> InputData:
     LOGGER.info(f'InputData successfully received via {input_type} for {input_data.name}')
     LOGGER.info(input_data)
     return input_data
+
+
+def input_handler(event: dict, context) -> dict:
+    """Lambda Handler Function to call get_inputs() and return correct object."""
+
+    LOGGER.info(f'Called Lambda Handler function for getting input data event from event: {event}')
+
+    # Ensure the event has attribute 'type', raise and log error if not.
+    if not event.get('type'):
+        LOGGER.error(f'The event passed to the input_handler() does not have attribute "type".')
+        raise KeyError('The event passed to the input_handler() does not have attribute "type".')
+    # Handle getting the necessary data
+    input_data = get_inputs(input_event=event)
+    out_event = EventReadyForSolar(
+        uid=input_data.uid,
+        input_data=input_data
+    )
+
+    LOGGER.info(f'Lambda Handler for input data successfully executed for uid: {input_data.uid}')
+    return out_event.dict()
 
 
 if __name__ == '__main__':
