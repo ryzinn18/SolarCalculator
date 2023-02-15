@@ -134,8 +134,8 @@ OutputGraphs/
 src/config.py
 src/.creds/
 src/backend/logs/
-src/samples/event_valid_csv.json
-src/samples/event_valid_xlsx.json
-src/samples/event_valid_sheet.json
+src/samples/event_inputs/input_csv.json
+src/samples/event_inputs/input_xlsx.json
+src/samples/event_inputs/input_sheet.json
 .archive/
 deploy/
