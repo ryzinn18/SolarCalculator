@@ -31,10 +31,10 @@ SAMPLES = {
     'input_invalid_type': join(ROOT, 'src/samples/input_invalid_type.json'),
     'input_invalid_value': join(ROOT, 'src/samples/input_invalid_value.json'),
 
-    'event_valid_form': join(ROOT, 'src/samples/input_form.json'),
-    'event_valid_csv': join(ROOT, 'src/samples/input_csv.json'),
-    'event_valid_xlsx': join(ROOT, 'src/samples/input_xlsx.json'),
-    'event_valid_sheet': join(ROOT, 'src/samples/input_sheet.json'),
+    'event_valid_form': join(ROOT, 'src/samples/event_inputs/input_form.json'),
+    'event_valid_csv': join(ROOT, 'src/samples/event_inputs/input_csv.json'),
+    'event_valid_xlsx': join(ROOT, 'src/samples/event_inputs/input_xlsx.json'),
+    'event_valid_sheet': join(ROOT, 'src/samples/event_inputs/input_sheet.json'),
 
     'solar_potential_valid': join(ROOT, 'src/samples/solar_potential_valid.json'),
 

@@ -1,15 +1,18 @@
 # SolarCalculator/src/backend/results.py
 # Integrates InputData and SolarPotentialData into Results data object and creates outputs
-import matplotlib.pyplot as plt
-from pandas import DataFrame
-from utils import Results, EventFinal, ROOT, MONTHS_MAP, IntListMonthly, FloatListMonthly
-from logging import getLogger
 from csv import writer as csv_writer
+from logging import getLogger
+from math import ceil
 from os import PathLike
 from os.path import join as os_join
 from pathlib import PurePath
-from math import ceil
 from typing import Union, Sequence, Collection, Callable, Literal
+
+import matplotlib.pyplot as plt
+from pandas import DataFrame
+import boto3
+
+from utils import Results, EventFinal, ROOT, MONTHS_MAP, IntListMonthly, FloatListMonthly, import_json, SAMPLES
 
 LOGGER = getLogger(__name__)
 
@@ -148,6 +151,10 @@ def get_results(input_data: dict, solar_data: dict) -> Results:
 
         return out
 
+    # Declare Dynamo DB table
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table('solarCalculatorTable')
+
     # Declare output paths
     path_graph_cost = OutputPath(name=input_data.get('name'), dir_name='Graphs', file='CostGraph', ext='png').path
     path_graph_energy = OutputPath(name=input_data.get('name'), dir_name='Graphs', file='EnergyGraph', ext='png').path
@@ -229,6 +236,11 @@ def get_results(input_data: dict, solar_data: dict) -> Results:
         mod_quantity=ceil(solar_data.get('needed_kwh') / input_data.get('mod_kwh')),
     )
 
+    response = table.put_item(
+        Item=result
+    )
+    print(response)
+
     LOGGER.info(f'Results data successfully created and validated: {result}')
     return result
 
@@ -257,4 +269,5 @@ def results_handler(event: dict, context) -> dict:
 
 
 if __name__ == '__main__':
+    import_json()
     pass
