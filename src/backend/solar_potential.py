@@ -2,7 +2,7 @@
 # This module gets the solar iridescence data for a given address.
 from requests import get as r_get
 from utils import SolarPotentialData, EventReadyForResults
-from config import nrel_api_key
+from config import NREL_API_KEY
 from logging import getLogger
 from json import JSONDecodeError
 
@@ -94,13 +94,13 @@ def get_solar_potential(input_data: dict) -> SolarPotentialData:
 
     # 1. Get normalized data:
     normal_params = _get_params(capacity=1, address=address)
-    normal_outputs = _get_iridescence_obj(params=normal_params, nrel_token=nrel_api_key).get('outputs')
+    normal_outputs = _get_iridescence_obj(params=normal_params, nrel_token=NREL_API_KEY).get('outputs')
     normal_annual = round(normal_outputs.get('ac_annual'))
     # 2. Calculate needed kWh:
     needed_kwh = round(annual_consumption / normal_annual)
     # 3. Get solar potential data:
     actual_params = _get_params(capacity=needed_kwh, address=address)
-    actual_obj = _get_iridescence_obj(params=actual_params, nrel_token=nrel_api_key)
+    actual_obj = _get_iridescence_obj(params=actual_params, nrel_token=NREL_API_KEY)
     actual_outputs = actual_obj.get('outputs')
     actual_monthly = actual_outputs.get('ac_monthly')
     # 4. Validate actual data into SolarPotentialData model.
