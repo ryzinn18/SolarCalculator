@@ -10,6 +10,11 @@
 #     https://developer.nrel.gov/signup/
 nrel_api_key = ''
 
+# REQUIRED: AWS Access and Secret Keys along with the table name you are using
+aws_access_key = ''
+aws_secret_key = ''
+dynamodb_table_name = ''
+
 # OPTIONAL: You need to sign up for a Google sheets API key.
 # This is only necessary if you are using a Google sheet for your input data.
 # You will also need to run the quickstart.py (see src/archive/quickstart.py) script.
