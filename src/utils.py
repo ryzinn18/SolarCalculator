@@ -185,10 +185,7 @@ class Results(BaseModel):
     savings_monthly: FloatListMonthly
     cost_reduction_monthly: IntListMonthly
     cost_reduction_average: int
-    energy_graph_path: FilePath
-    cost_graph_path: FilePath
     results_data_json: JSON
-    results_csv_path: FilePath
     mod_quantity: PositiveInt
 
 
