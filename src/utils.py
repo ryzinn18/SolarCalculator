@@ -1,5 +1,5 @@
 # SolarCalculator/src/utils.py
-from pydantic import BaseModel, conlist, PositiveInt, PositiveFloat, FilePath
+from pydantic import BaseModel, conlist, PositiveInt, PositiveFloat, HttpUrl
 from config import google_api_sheet_id
 from logging import getLogger, basicConfig, INFO
 from typing import Union, Dict, Any, List, Type, TypeVar
@@ -185,8 +185,11 @@ class Results(BaseModel):
     savings_monthly: FloatListMonthly
     cost_reduction_monthly: IntListMonthly
     cost_reduction_average: int
-    results_data_json: JSON
     mod_quantity: PositiveInt
+    results_data_json: JSON
+    uri_data_csv: str
+    uri_graph_cost: str
+    uri_graph_energy: str
 
 
 class EventFinal(BaseModel):
