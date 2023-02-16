@@ -1,6 +1,6 @@
 # SolarCalculator/src/utils.py
-from pydantic import BaseModel, conlist, PositiveInt, PositiveFloat, HttpUrl
-from config import google_api_sheet_id
+from pydantic import BaseModel, conlist, PositiveInt, PositiveFloat
+from config import GOOGLE_API_SHEET_ID
 from logging import getLogger, basicConfig, INFO
 from typing import Union, Dict, Any, List, Type, TypeVar
 from os.path import join
@@ -20,7 +20,7 @@ JSON = Union[Dict[str, Any], List[Any], int, str, float, bool, Type[None]]
 ROOT = Path(__file__).parents[1]
 
 SAMPLES = {
-    'sheet': google_api_sheet_id,
+    'sheet': GOOGLE_API_SHEET_ID,
 
     'csv_valid': join(ROOT, 'src/samples/consumption_valid.csv'),
     'csv_invalid': join(ROOT, 'src/samples/consumption_invalid.csv'),
@@ -127,6 +127,18 @@ def export_json(j_obj: JSON, target_directory: str, out_name: str) -> None:
     LOGGER.info(f'The json file was successfully exported: {output}')
 
 
+def delete_s3_obj(bucket_name: str, obj_key: str) -> int:
+    """Delete an s3 object given bucket name and object's key and return the http response code."""
+
+    from boto3 import resource as boto_resource
+    from config import AWS_ACCESS_KEY, AWS_SECRET_KEY
+
+    s3 = boto_resource('s3', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_SECRET_KEY)
+
+    response = s3.Object(bucket_name, obj_key).delete()
+    return response['ResponseMetadata']['HTTPStatusCode']
+
+
 class InputData(BaseModel):
     # Required
     uid: str
@@ -200,5 +212,4 @@ class EventFinal(BaseModel):
 
 
 if __name__ == '__main__':
-    # print(import_json(SAMPLES['input_valid']))
     pass
