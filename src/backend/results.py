@@ -8,23 +8,23 @@ from json import loads as j_loads, dumps as j_dumps
 from os import PathLike
 from typing import Union, Sequence, Collection, Callable, Literal
 import io
-import urllib
 
 import matplotlib.pyplot as plt
 from pandas import DataFrame
-import boto3
+from boto3 import resource as boto_resource
 
 from utils import Results, EventFinal, MONTHS_MAP, IntListMonthly, FloatListMonthly, import_json, SAMPLES
-from config import aws_access_key, aws_secret_key, dynamodb_table_name
+from config import AWS_ACCESS_KEY, AWS_SECRET_KEY, DYNAMODB_TABLE_NAME
 
 LOGGER = getLogger(__name__)
-S3 = boto3.resource('s3', aws_access_key_id=aws_access_key, aws_secret_access_key=aws_secret_key)
+S3 = boto_resource('s3', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_SECRET_KEY)
+DYNAMODB = boto_resource('dynamodb', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_SECRET_KEY)
 
 
-class S3Url:
+class S3Uri:
     __slots__ = 'path'
 
-    def __init__(self, bucket_name: str, obj_key: str, region_code="us-west-1"):
+    def __init__(self, bucket_name: str, obj_key: str):
         """Simple class for creating specific s3 object paths."""
 
         self.path = f"s3://{bucket_name}/{obj_key}"
@@ -57,7 +57,7 @@ def get_data_df(
     return result
 
 
-def post_data_csv_to_s3(data_df: DataFrame, obj_key: str, bucket_name='sc-outputs-csv') -> S3Url.path:
+def post_data_csv_to_s3(data_df: DataFrame, obj_key: str, bucket_name='sc-outputs-csv') -> S3Uri.path:
     """Posts a DataFrame  as a csv to s3 bucket"""
 
     obj_key = obj_key + '.csv'
@@ -68,45 +68,49 @@ def post_data_csv_to_s3(data_df: DataFrame, obj_key: str, bucket_name='sc-output
     S3.Bucket(bucket_name).put_object(Body=csv_buffer.getvalue(), Key=obj_key)
     # _check_response(response=response['ResponseMetadata']['HTTPStatusCode'], bucket_name=bucket_name, key=obj_key)
 
-    return S3Url(bucket_name=bucket_name, obj_key=obj_key).path
+    return S3Uri(bucket_name=bucket_name, obj_key=obj_key).path
 
 
-def post_obj_to_s3(obj_format: Literal['png', 'csv'], bucket_name: str, obj_key: str, content_type: str) -> S3Url.path:
-    """Posts an object (e.g., image) to s3 bucket"""
+def post_obj_to_s3(obj_format: Literal['png', 'csv'], bucket_name: str, obj_key: str, content_type: str) -> S3Uri.path:
+    """Posts an object (e.g., image) to s3 bucket."""
 
     obj_key = obj_key + '.png'
-    # Create buffer for the object
+    # Create stream for the object
     data = io.BytesIO()
     plt.savefig(fname=data, format=obj_format)
+    # Set stream position to start of stream
     data.seek(0)
     # Get bucket item, post the object, and return response
     bucket = S3.Bucket(bucket_name)
     bucket.put_object(Body=data, ContentType=content_type, Key=obj_key)
-    # _check_response(response=response['ResponseMetadata']['HTTPStatusCode'], bucket_name=bucket_name, key=obj_key)
 
-    return S3Url(bucket_name=bucket_name, obj_key=obj_key).path
+    return S3Uri(bucket_name=bucket_name, obj_key=obj_key).path
 
 
-def _check_response(response: int, bucket_name: str, key: str) -> None:
-    """Check the response received from posting an object to an s3 bucket and Log/raise exception if not 200 response"""
+def post_item_to_dynamodb(dynamo_table, item: dict) -> int:
+    """Post a db item to DynamoDB and return the response code."""
 
-    if not (200 >= response > 300):
+    return dynamo_table.put_item(
+        Item=item
+    )['ResponseMetadata']['HTTPStatusCode']
+
+
+def check_http_response(response_code: int, key: str) -> None:
+    """Check if a response code is non 200 and log/raise exception if so."""
+
+    if response_code < 200 or response_code >= 300:
         LOGGER.error(
-            f'A {response} response was given when trying to post item with key "{key}" to s3 bucket "{bucket_name}"'
+            f'A {response_code} response was given when trying to post item with key "{key}" to s3 bucket '
+            + f'"{DYNAMODB_TABLE_NAME}" '
         )
-        raise Exception(f'The item with key "{key}" was not posted to s3 bucket "{bucket_name}".')
-
-
-def _delete_s3_obj(bucket_name: str, obj_key: str) -> int:
-    """"""
-
-    response = S3.Object(bucket_name, obj_key).delete()
-    return response['ResponseMetadata']['HTTPStatusCode']
+        raise Exception(
+            f'The item with key "{key}" gave a non 200 response when posting to "{DYNAMODB_TABLE_NAME}".'
+        )
 
 
 def create_comparison_graph(
         title: str, df1: DataFrame, df2: DataFrame, label1: str, label2: str, y_label: str,
-        graph_type: Literal['energy', 'cost'], uid: str) -> S3Url.path:
+        graph_type: Literal['energy', 'cost'], uid: str) -> S3Uri.path:
     """Creates a graph with 2 overlying plots for comparison."""
 
     LOGGER.info(f'Creating the {graph_type} comparison graph for uid "{uid}"')
@@ -169,45 +173,6 @@ def create_comparison_graph(
     return url
 
 
-def DEPRECATED_create_out_csv(header: dict, data_df: DataFrame, footer: dict, out_path: Union[PathLike, str]) -> None:
-    """
-    DEPRECATED: Could still be used at some point to allow users to download a csv all data so saving for now.
-    Create the output csv at the path passed.
-    """
-    """Original Call:
-    # Create the output csv
-    create_out_csv(
-        header={'Name': input_data.get('name'),
-                'Address': input_data.get('address'),
-                'Cost/kWh': input_data.get('cost_per_kwh'),
-                '': ''},  # Blank Row
-        data_df=results_df,
-        footer={'': '',  # Blank Row
-                'Note:': solar_data.get('note'),
-                'Potential kWh Source:': solar_data.get('source')},
-        out_path=path_csv_out
-    )"""
-
-    LOGGER.info('Creating output csv')
-
-    def _write_dict(to_write: dict) -> None:
-        """Helper to iterate through a dict and write its items to csv."""
-
-        for key, val in to_write.items():
-            writer.writerow([key, val])
-
-    with open(out_path, 'w') as out_file:
-        writer = csv_writer(out_file, delimiter=',')
-        # Write header data (Name, Address, Cost/kWh)
-        _write_dict(to_write=header)
-        # Write data (Cost, Actual Cost, Actual Consumption, etc.)
-        data_df.to_csv(out_file, mode='a', index=False)
-        # Write footer data (Notes & Sources)
-        _write_dict(to_write=footer)
-
-    LOGGER.info(f'Output csv successfully created: {out_path}')
-
-
 def get_results(input_data: dict, solar_data: dict) -> Results:
     """Create graphs, calculate savings and mod quantity, and return Results data object."""
 
@@ -221,10 +186,6 @@ def get_results(input_data: dict, solar_data: dict) -> Results:
             out.append(func(arg1, arg2, arg3))
 
         return out
-
-    # Declare Dynamo DB table
-    dynamodb = boto3.resource('dynamodb')
-    table = dynamodb.Table(dynamodb_table_name)
 
     # Calculate Potential Cost, Savings, and Cost Reduction
     potential_cost_monthly = _helper_calculate(
@@ -287,24 +248,29 @@ def get_results(input_data: dict, solar_data: dict) -> Results:
         savings_monthly=savings_monthly,
         cost_reduction_monthly=cost_reduction_monthly,
         cost_reduction_average=_average(cost_reduction_monthly),
-        results_data_json=results_df.to_json(indent=4),
+        results_data_json=results_df.to_json(),
         mod_quantity=mod_quantity,
         uri_data_csv=url_data_csv,
         uri_graph_cost=url_cost_graph,
         uri_graph_energy=url_energy_graph
     )
+    LOGGER.info(f'Results data object successfully created and validated: {result}')
 
-    # item = j_loads(j_dumps(result.json()), parse_float=Decimal)
-    response = table.put_item(
-        Item={'uid': result.uid, 'name': result.name, 'address': result.address, 'mod_quantity': mod_quantity,
-              'results_data': j_loads(j_dumps(results_df.to_json()), parse_float=Decimal),
-              'data_csv': url_data_csv,
-              'cost_graph': url_cost_graph,
-              'energy_graph': url_energy_graph}
+    # Declare which data will be included in table
+    table_item = {
+        'uid': result.uid, 'name': result.name, 'address': result.address, 'mod_quantity': mod_quantity,
+        'results_data': j_loads(j_dumps(results_df.to_json()), parse_float=Decimal),
+        'data_csv': url_data_csv,
+        'cost_graph': url_cost_graph,
+        'energy_graph': url_energy_graph
+    }
+    # Post item to DynamoDB with necessary data and verify a non 200 response is given
+    response_code = post_item_to_dynamodb(dynamo_table=DYNAMODB.Table(DYNAMODB_TABLE_NAME), item=table_item)
+    check_http_response(response_code=response_code, key=result.uid)
+
+    LOGGER.info(
+        f'Necessary data successfully written to DynamoDB table "{DYNAMODB_TABLE_NAME}" with key "{result.uid}"'
     )
-    print(response['ResponseMetadata']['HTTPStatusCode'])
-
-    LOGGER.info(f'Results data successfully created and validated: {result}')
     return result
 
 
@@ -331,9 +297,45 @@ def results_handler(event: dict, context) -> dict:
     return out_event.dict()
 
 
-if __name__ == '__main__':
-    # print(delete_s3_obj(bucket_name='sc-outputs-graph-energy', obj_key="testRyan2023-02-15 00:55:15.142014"))
-    # print(get_from_s3(bucket='sc-output-images', s3_file='testRyanCostGraph'))
+def DEPRECATED_create_out_csv(header: dict, data_df: DataFrame, footer: dict, out_path: Union[PathLike, str]) -> None:
+    """
+    DEPRECATED: Could still be used at some point to allow users to download a csv all data so saving for now.
+    Create the output csv at the path passed.
+    """
+    """Original Call:
+    # Create the output csv
+    create_out_csv(
+        header={'Name': input_data.get('name'),
+                'Address': input_data.get('address'),
+                'Cost/kWh': input_data.get('cost_per_kwh'),
+                '': ''},  # Blank Row
+        data_df=results_df,
+        footer={'': '',  # Blank Row
+                'Note:': solar_data.get('note'),
+                'Potential kWh Source:': solar_data.get('source')},
+        out_path=path_csv_out
+    )"""
 
+    LOGGER.info('Creating output csv')
+
+    def _write_dict(to_write: dict) -> None:
+        """Helper to iterate through a dict and write its items to csv."""
+
+        for key, val in to_write.items():
+            writer.writerow([key, val])
+
+    with open(out_path, 'w') as out_file:
+        writer = csv_writer(out_file, delimiter=',')
+        # Write header data (Name, Address, Cost/kWh)
+        _write_dict(to_write=header)
+        # Write data (Cost, Actual Cost, Actual Consumption, etc.)
+        data_df.to_csv(out_file, mode='a', index=False)
+        # Write footer data (Notes & Sources)
+        _write_dict(to_write=footer)
+
+    LOGGER.info(f'Output csv successfully created: {out_path}')
+
+
+if __name__ == '__main__':
     results_handler(import_json(SAMPLES['event_ready_for_results']), None)
     pass
