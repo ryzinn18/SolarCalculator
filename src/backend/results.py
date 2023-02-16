@@ -3,30 +3,31 @@
 from csv import writer as csv_writer
 from logging import getLogger
 from math import ceil
+from decimal import Decimal
+from json import loads as j_loads, dumps as j_dumps
 from os import PathLike
-from os.path import join as os_join
-from pathlib import PurePath
 from typing import Union, Sequence, Collection, Callable, Literal
+import io
+import urllib
 
 import matplotlib.pyplot as plt
 from pandas import DataFrame
 import boto3
 
-from utils import Results, EventFinal, ROOT, MONTHS_MAP, IntListMonthly, FloatListMonthly, import_json, SAMPLES
+from utils import Results, EventFinal, MONTHS_MAP, IntListMonthly, FloatListMonthly, import_json, SAMPLES
+from config import aws_access_key, aws_secret_key, dynamodb_table_name
 
 LOGGER = getLogger(__name__)
+S3 = boto3.resource('s3', aws_access_key_id=aws_access_key, aws_secret_access_key=aws_secret_key)
 
 
-class OutputPath:
+class S3Url:
     __slots__ = 'path'
 
-    def __init__(self, name: str,
-                 file: Literal['EnergyGraph', 'CostGraph', 'OutputData'],
-                 dir_name: Literal['Graphs', 'DataFiles'],
-                 ext: Literal['png', 'csv']):
-        """Simple class for creating specific output paths."""
+    def __init__(self, bucket_name: str, obj_key: str, region_code="us-west-1"):
+        """Simple class for creating specific s3 object paths."""
 
-        self.path = PurePath(os_join(ROOT, 'Outputs', dir_name, f'{name}-{file}.{ext}'))
+        self.path = f"s3://{bucket_name}/{obj_key}"
 
 
 def _average(iterable: Union[Sequence, Collection]) -> int:
@@ -56,12 +57,59 @@ def get_data_df(
     return result
 
 
+def post_data_csv_to_s3(data_df: DataFrame, obj_key: str, bucket_name='sc-outputs-csv') -> S3Url.path:
+    """Posts a DataFrame  as a csv to s3 bucket"""
+
+    obj_key = obj_key + '.csv'
+    # Create io buffer for csv
+    csv_buffer = io.StringIO()
+    data_df.to_csv(csv_buffer)
+    # Post the object to dedicated bucket and return the http response
+    S3.Bucket(bucket_name).put_object(Body=csv_buffer.getvalue(), Key=obj_key)
+    # _check_response(response=response['ResponseMetadata']['HTTPStatusCode'], bucket_name=bucket_name, key=obj_key)
+
+    return S3Url(bucket_name=bucket_name, obj_key=obj_key).path
+
+
+def post_obj_to_s3(obj_format: Literal['png', 'csv'], bucket_name: str, obj_key: str, content_type: str) -> S3Url.path:
+    """Posts an object (e.g., image) to s3 bucket"""
+
+    obj_key = obj_key + '.png'
+    # Create buffer for the object
+    data = io.BytesIO()
+    plt.savefig(fname=data, format=obj_format)
+    data.seek(0)
+    # Get bucket item, post the object, and return response
+    bucket = S3.Bucket(bucket_name)
+    bucket.put_object(Body=data, ContentType=content_type, Key=obj_key)
+    # _check_response(response=response['ResponseMetadata']['HTTPStatusCode'], bucket_name=bucket_name, key=obj_key)
+
+    return S3Url(bucket_name=bucket_name, obj_key=obj_key).path
+
+
+def _check_response(response: int, bucket_name: str, key: str) -> None:
+    """Check the response received from posting an object to an s3 bucket and Log/raise exception if not 200 response"""
+
+    if not (200 >= response > 300):
+        LOGGER.error(
+            f'A {response} response was given when trying to post item with key "{key}" to s3 bucket "{bucket_name}"'
+        )
+        raise Exception(f'The item with key "{key}" was not posted to s3 bucket "{bucket_name}".')
+
+
+def _delete_s3_obj(bucket_name: str, obj_key: str) -> int:
+    """"""
+
+    response = S3.Object(bucket_name, obj_key).delete()
+    return response['ResponseMetadata']['HTTPStatusCode']
+
+
 def create_comparison_graph(
         title: str, df1: DataFrame, df2: DataFrame, label1: str, label2: str, y_label: str,
-        out_path: Union[PathLike, str], graph_type: Literal['energy', 'cost']) -> None:
+        graph_type: Literal['energy', 'cost'], uid: str) -> S3Url.path:
     """Creates a graph with 2 overlying plots for comparison."""
 
-    LOGGER.info(f'Creating the comparison graph titled: {title}')
+    LOGGER.info(f'Creating the {graph_type} comparison graph for uid "{uid}"')
 
     def _plot_bar(df: DataFrame, label: str, color: str) -> None:
         """Plot a bar-plot and set the label."""
@@ -107,15 +155,38 @@ def create_comparison_graph(
 
     # Tighten layout
     plt.tight_layout()
+
     # Save the figure
-    plt.savefig(fname=out_path)
+    bucket_name = f"sc-outputs-graph-{graph_type}"
+    url = post_obj_to_s3(
+        bucket_name=bucket_name,
+        obj_format='png',
+        obj_key='test' + uid,
+        content_type='image/png'
+    )
 
-    LOGGER.info(f'Graph created: {out_path}')
+    LOGGER.info(f'Graph created and put in s3 bucket - {bucket_name} - with key "{uid}"')
+    return url
 
 
-def create_out_csv(header: dict, data_df: DataFrame, footer: dict,
-                   out_path: Union[PathLike, str]) -> None:
-    """Create the output csv at the path passed."""
+def DEPRECATED_create_out_csv(header: dict, data_df: DataFrame, footer: dict, out_path: Union[PathLike, str]) -> None:
+    """
+    DEPRECATED: Could still be used at some point to allow users to download a csv all data so saving for now.
+    Create the output csv at the path passed.
+    """
+    """Original Call:
+    # Create the output csv
+    create_out_csv(
+        header={'Name': input_data.get('name'),
+                'Address': input_data.get('address'),
+                'Cost/kWh': input_data.get('cost_per_kwh'),
+                '': ''},  # Blank Row
+        data_df=results_df,
+        footer={'': '',  # Blank Row
+                'Note:': solar_data.get('note'),
+                'Potential kWh Source:': solar_data.get('source')},
+        out_path=path_csv_out
+    )"""
 
     LOGGER.info('Creating output csv')
 
@@ -153,12 +224,7 @@ def get_results(input_data: dict, solar_data: dict) -> Results:
 
     # Declare Dynamo DB table
     dynamodb = boto3.resource('dynamodb')
-    table = dynamodb.Table('solarCalculatorTable')
-
-    # Declare output paths
-    path_graph_cost = OutputPath(name=input_data.get('name'), dir_name='Graphs', file='CostGraph', ext='png').path
-    path_graph_energy = OutputPath(name=input_data.get('name'), dir_name='Graphs', file='EnergyGraph', ext='png').path
-    path_csv_out = OutputPath(name=input_data.get('name'), dir_name='DataFiles', file='OutputData', ext='csv').path
+    table = dynamodb.Table(dynamodb_table_name)
 
     # Calculate Potential Cost, Savings, and Cost Reduction
     potential_cost_monthly = _helper_calculate(
@@ -182,40 +248,32 @@ def get_results(input_data: dict, solar_data: dict) -> Results:
         savings_monthly=savings_monthly,
         cost_reduction_monthly=cost_reduction_monthly,
     )
+    # Create data csv and save to s3 bucket
+    url_data_csv = post_data_csv_to_s3(data_df=results_df, obj_key=input_data['uid'])
     # Create cost comparison graph
-    create_comparison_graph(
+    url_cost_graph = create_comparison_graph(
         title=f"{input_data.get('name')}'s Actual vs Potential Cost",
         df1=results_df['Cost $'].round(),
         df2=results_df['Potential Cost $'].round(),
         label1='Actual Cost',
         label2='Potential Cost',
         y_label='Dollars',
-        out_path=path_graph_cost,
-        graph_type='cost'
+        graph_type='cost',
+        uid=input_data['uid']
     )
     # Create consumption vs production graph
-    create_comparison_graph(
+    url_energy_graph = create_comparison_graph(
         title=f"{input_data.get('name')}'s Energy Consumption vs Production",
         df1=results_df['Consumption kWh'],
         df2=results_df['Potential kWh'],
         label1='Energy Consumption',
         label2='Potential Energy Production',
         y_label=solar_data.get('units_solar_potential'),
-        out_path=path_graph_energy,
-        graph_type='energy'
+        graph_type='energy',
+        uid=input_data['uid']
     )
-    # Create the output csv
-    create_out_csv(
-        header={'Name': input_data.get('name'),
-                'Address': input_data.get('address'),
-                'Cost/kWh': input_data.get('cost_per_kwh'),
-                '': ''},  # Blank Row
-        data_df=results_df,
-        footer={'': '',  # Blank Row
-                'Note:': solar_data.get('note'),
-                'Potential kWh Source:': solar_data.get('source')},
-        out_path=path_csv_out
-    )
+    # Calculate amount of mods needed for project
+    mod_quantity = ceil(solar_data.get('needed_kwh') / input_data.get('mod_kwh'))
 
     # Create the Results data object
     result = Results(
@@ -229,17 +287,22 @@ def get_results(input_data: dict, solar_data: dict) -> Results:
         savings_monthly=savings_monthly,
         cost_reduction_monthly=cost_reduction_monthly,
         cost_reduction_average=_average(cost_reduction_monthly),
-        energy_graph_path=path_graph_energy,
-        cost_graph_path=path_graph_cost,
         results_data_json=results_df.to_json(indent=4),
-        results_csv_path=path_csv_out,
-        mod_quantity=ceil(solar_data.get('needed_kwh') / input_data.get('mod_kwh')),
+        mod_quantity=mod_quantity,
+        uri_data_csv=url_data_csv,
+        uri_graph_cost=url_cost_graph,
+        uri_graph_energy=url_energy_graph
     )
 
+    # item = j_loads(j_dumps(result.json()), parse_float=Decimal)
     response = table.put_item(
-        Item=result
+        Item={'uid': result.uid, 'name': result.name, 'address': result.address, 'mod_quantity': mod_quantity,
+              'results_data': j_loads(j_dumps(results_df.to_json()), parse_float=Decimal),
+              'data_csv': url_data_csv,
+              'cost_graph': url_cost_graph,
+              'energy_graph': url_energy_graph}
     )
-    print(response)
+    print(response['ResponseMetadata']['HTTPStatusCode'])
 
     LOGGER.info(f'Results data successfully created and validated: {result}')
     return result
@@ -269,5 +332,8 @@ def results_handler(event: dict, context) -> dict:
 
 
 if __name__ == '__main__':
-    import_json()
+    # print(delete_s3_obj(bucket_name='sc-outputs-graph-energy', obj_key="testRyan2023-02-15 00:55:15.142014"))
+    # print(get_from_s3(bucket='sc-output-images', s3_file='testRyanCostGraph'))
+
+    results_handler(import_json(SAMPLES['event_ready_for_results']), None)
     pass
