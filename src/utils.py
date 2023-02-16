@@ -35,6 +35,8 @@ SAMPLES = {
     'event_valid_csv': join(ROOT, 'src/samples/event_inputs/input_csv.json'),
     'event_valid_xlsx': join(ROOT, 'src/samples/event_inputs/input_xlsx.json'),
     'event_valid_sheet': join(ROOT, 'src/samples/event_inputs/input_sheet.json'),
+    'event_ready_for_solar': join(ROOT, 'src/samples/event_inputs/ready_forsolar.json'),
+    'event_ready_for_results': join(ROOT, 'src/samples/event_inputs/ready_for_results.json'),
 
     'solar_potential_valid': join(ROOT, 'src/samples/solar_potential_valid.json'),
 
