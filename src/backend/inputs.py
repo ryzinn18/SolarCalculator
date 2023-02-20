@@ -1,6 +1,5 @@
 # SolarCalculator/src/backend/inputs.py
 # Handles an input type by calling the correct input function and validates InputData
-# from src.utils import import_json, SAMPLES
 from pydantic import PositiveFloat
 from utils import IntListMonthly, InputData, EventReadyForSolar, Status
 from logging import getLogger
