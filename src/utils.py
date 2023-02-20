@@ -1,10 +1,11 @@
 # SolarCalculator/src/utils.py
-from pydantic import BaseModel, conlist, PositiveInt, PositiveFloat
+from pydantic import BaseModel, conlist, conint, PositiveInt, PositiveFloat
 from config import GOOGLE_API_SHEET_ID
 from logging import getLogger, basicConfig, INFO
 from typing import Union, Dict, Any, List, Type, TypeVar
 from os.path import join
 from pathlib import PurePath, Path
+from datetime import datetime
 
 basicConfig(
     filename='logs/main.log',
@@ -66,6 +67,7 @@ IntListMonthly = conlist(item_type=PositiveInt, min_items=12, max_items=12)
 FloatListMonthly = conlist(item_type=PositiveFloat, min_items=12, max_items=12)
 AmbiguousListMonthly = conlist(item_type=float, min_items=12, max_items=12)
 PandasDataFrame = TypeVar('PandasDataFrame')
+StatusCode = conint(gt=99, lt=600)
 
 
 def import_json(path: str) -> dict:
@@ -161,6 +163,8 @@ class InputData(BaseModel):
 
 class EventReadyForSolar(BaseModel):
     uid: str
+    time_stamp: str
+    status_code: StatusCode
     input_data: InputData
 
 
@@ -181,6 +185,8 @@ class SolarPotentialData(BaseModel):
 
 class EventReadyForResults(BaseModel):
     uid: str
+    time_stamp: str
+    status_code: StatusCode
     input_data: InputData
     solar_data: SolarPotentialData
 
@@ -206,6 +212,8 @@ class Results(BaseModel):
 
 class EventFinal(BaseModel):
     uid: str
+    time_stamp: str
+    status_code: StatusCode
     input_data: InputData
     solar_data: SolarPotentialData
     results_data: Results
