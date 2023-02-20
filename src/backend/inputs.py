@@ -2,13 +2,12 @@
 # Handles an input type by calling the correct input function and validates InputData
 # from src.utils import import_json, SAMPLES
 from pydantic import PositiveFloat
-from utils import IntListMonthly, InputData, EventReadyForSolar
+from utils import IntListMonthly, InputData, EventReadyForSolar, Status
 from logging import getLogger
 from typing import Callable
 from datetime import datetime as dt
 
 LOGGER = getLogger(__name__)
-NOW = dt.now().__str__()
 
 
 class InputError(Exception):
@@ -97,7 +96,7 @@ def _clean_name(name: str) -> str:
 
 
 @validate
-def input_csv(file_path: str) -> InputData:
+def input_csv(file_path: str, time_stamp: str) -> InputData:
     """Read a csv at specified path and return InputData object."""
 
     from csv import reader
@@ -128,7 +127,7 @@ def input_csv(file_path: str) -> InputData:
 
     # Instantiate InputData model
     result = InputData(
-        uid=_clean_name(user_data[0]) + NOW,
+        uid=_clean_name(user_data[0]) + time_stamp,
         name=_clean_name(name=user_data[0]),
         address=user_data[1],
         mod_kwh=_validate_mod_kwh(in_data=user_data[2]),
@@ -144,7 +143,7 @@ def input_csv(file_path: str) -> InputData:
 
 
 @validate
-def input_xlsx(file_path: str) -> InputData:
+def input_xlsx(file_path: str, time_stamp: str) -> InputData:
     """Read a xlsx at specified path and return InputData object."""
 
     from openpyxl import load_workbook
@@ -172,7 +171,7 @@ def input_xlsx(file_path: str) -> InputData:
 
     # Instantiate InputData model
     result = InputData(
-        uid=_clean_name(user_data[0]) + NOW,
+        uid=_clean_name(user_data[0]) + time_stamp,
         name=_clean_name(name=user_data[0]),
         address=user_data[1],
         mod_kwh=_validate_mod_kwh(in_data=user_data[2]),
@@ -188,7 +187,7 @@ def input_xlsx(file_path: str) -> InputData:
 
 
 # @validate
-def input_sheets(sheet_id: str) -> InputData:
+def input_sheets(sheet_id: str, time_stamp: str) -> InputData:
     """
     _authenticate_google_api_token() script from below and updated slightly by me.
     https://medium.com/analytics-vidhya/how-to-read-and-write-data-to-google-spreadsheet-using-python-ebf54d51a72c
@@ -269,7 +268,7 @@ def input_sheets(sheet_id: str) -> InputData:
 
     # Instantiate InputData model
     result = InputData(
-        uid=_clean_name(user_data[0][0]) + NOW,
+        uid=_clean_name(user_data[0][0]) + time_stamp,
         name=_clean_name(user_data[0][0]),
         address=user_data[1][0],
         mod_kwh=_validate_mod_kwh(in_data=user_data[2][0]),
@@ -285,13 +284,13 @@ def input_sheets(sheet_id: str) -> InputData:
 
 
 @validate
-def input_form(input_obj: dict) -> InputData:
+def input_form(input_obj: dict, time_stamp: str) -> InputData:
     """Takes web input object and returns InputData object."""
 
     LOGGER.info(f'Collecting input data from web input object: {input_obj}')
 
     result = InputData(
-        uid=_clean_name(input_obj['name']) + NOW,
+        uid=_clean_name(input_obj['name']) + time_stamp,
         name=_clean_name(input_obj['name']),
         address=input_obj['address'],
         mod_kwh=input_obj['mod_kwh'],
@@ -308,7 +307,7 @@ def input_form(input_obj: dict) -> InputData:
     return result
 
 
-def get_inputs(input_event: dict) -> InputData:
+def get_inputs(input_event: dict, time_stamp: str) -> InputData:
     """Calls correct input function or raises an InputError. Will catch, log and raise Exceptions."""
 
     LOGGER.info(f'The input_handler() has been called for event: {input_event}')
@@ -318,13 +317,13 @@ def get_inputs(input_event: dict) -> InputData:
 
     # If/elif/else clause to call correct handler function. Raise and log error if no input function is called.
     if input_type == 'csv':
-        input_data = input_csv(file_path=input_event['csv_source'])
+        input_data = input_csv(file_path=input_event['csv_source'], time_stamp=time_stamp)
     elif input_type == 'xlsx':
-        input_data = input_xlsx(file_path=input_event['xlsx_source'])
+        input_data = input_xlsx(file_path=input_event['xlsx_source'], time_stamp=time_stamp)
     elif input_type == 'sheet':
-        input_data = input_sheets(sheet_id=input_event['sheet_id'])
+        input_data = input_sheets(sheet_id=input_event['sheet_id'], time_stamp=time_stamp)
     elif input_type == 'form':
-        input_data = input_form(input_obj=input_event['form'])
+        input_data = input_form(input_obj=input_event['form'], time_stamp=time_stamp)
     else:
         LOGGER.error(f'The input type passed is invalid: {input_type}')
         raise InputError(
@@ -343,20 +342,34 @@ def input_handler(event: dict, context) -> dict:
     LOGGER.info(f'Called Lambda Handler function for getting input data event from event: {event}')
 
     # Ensure the event has attribute 'type', raise and log error if not.
-    if not event.get('type'):
-        LOGGER.error(f'The event passed to the input_handler() does not have attribute "type".')
-        raise KeyError('The event passed to the input_handler() does not have attribute "type".')
+    # if not event.get('type'):
+    #     LOGGER.error(f'The event passed to the input_handler() does not have attribute "type".')
+    #     raise KeyError('The event passed to the input_handler() does not have attribute "type".')
+    time_stamp = dt.now().__str__()
     # Handle getting the necessary data
-    input_data = get_inputs(input_event=event)
-    out_event = EventReadyForSolar(
-        uid=input_data.uid,
-        input_data=input_data
-    )
+    try:
+        input_data = get_inputs(
+            input_event=event,
+            time_stamp=time_stamp
+        )
+        uid = input_data.uid
+        status = Status(status_code=200, message="get_inputs() called successfully.")
+        LOGGER.info(f'Lambda Handler for input data successfully executed for uid: {input_data.uid}')
+    except Exception as e:
+        uid = 'NA' + time_stamp
+        input_data = dict()
+        status = Status(status_code=400, message=f"get_inputs() called unsuccessfully due to error: {e.__repr__()}")
+        LOGGER.error(e, exc_info=True)
 
-    LOGGER.info(f'Lambda Handler for input data successfully executed for uid: {input_data.uid}')
-    return out_event.dict()
+    return EventReadyForSolar(
+        uid=uid,
+        time_stamp=time_stamp,
+        status=status,
+        input_data=input_data
+    ).dict()
 
 
 if __name__ == '__main__':
-    # print(input_handler(import_json(SAMPLES['event_valid_csv'])))
+    from utils import import_json, SAMPLES
+    print(input_handler(import_json(SAMPLES['event_valid_form']), None)['status'])
     pass

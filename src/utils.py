@@ -33,10 +33,10 @@ SAMPLES = {
     'input_invalid_value': join(ROOT, 'src/samples/input_invalid_value.json'),
 
     'event_valid_form': join(ROOT, 'src/samples/event_inputs/input_form.json'),
-    'event_valid_csv': join(ROOT, 'src/samples/event_inputs/input_csv.json'),
+    'event_valid_csv': join(ROOT, 'src/samples/event_outputs/input_csv.json'),
     'event_valid_xlsx': join(ROOT, 'src/samples/event_inputs/input_xlsx.json'),
     'event_valid_sheet': join(ROOT, 'src/samples/event_inputs/input_sheet.json'),
-    'event_ready_for_solar': join(ROOT, 'src/samples/event_inputs/ready_forsolar.json'),
+    'event_ready_for_solar': join(ROOT, 'src/samples/event_inputs/ready_for_solar.json'),
     'event_ready_for_results': join(ROOT, 'src/samples/event_inputs/ready_for_results.json'),
 
     'solar_potential_valid': join(ROOT, 'src/samples/solar_potential_valid.json'),
@@ -141,6 +141,11 @@ def delete_s3_obj(bucket_name: str, obj_key: str) -> int:
     return response['ResponseMetadata']['HTTPStatusCode']
 
 
+class Status(BaseModel):
+    status_code: StatusCode
+    message: str
+
+
 class InputData(BaseModel):
     # Required
     uid: str
@@ -164,8 +169,8 @@ class InputData(BaseModel):
 class EventReadyForSolar(BaseModel):
     uid: str
     time_stamp: str
-    status_code: StatusCode
-    input_data: InputData
+    status: Status
+    input_data: dict
 
 
 class SolarPotentialData(BaseModel):
@@ -175,7 +180,6 @@ class SolarPotentialData(BaseModel):
     solar_potential_monthly: IntListMonthly
     solar_potential_annual: PositiveInt
     needed_kwh: PositiveInt
-    input_data: InputData
     # Default
     note = "Solar potential (kWh) reported over a 30 year average."
     source = "pvwatts.nrel.gov/pvwatts.php"
@@ -186,9 +190,9 @@ class SolarPotentialData(BaseModel):
 class EventReadyForResults(BaseModel):
     uid: str
     time_stamp: str
-    status_code: StatusCode
-    input_data: InputData
-    solar_data: SolarPotentialData
+    status: Status
+    input_data: dict
+    solar_data: dict
 
 
 class Results(BaseModel):
@@ -213,10 +217,10 @@ class Results(BaseModel):
 class EventFinal(BaseModel):
     uid: str
     time_stamp: str
-    status_code: StatusCode
+    status: Status
     input_data: InputData
-    solar_data: SolarPotentialData
-    results_data: Results
+    solar_data: dict
+    results_data: dict
 
 
 if __name__ == '__main__':

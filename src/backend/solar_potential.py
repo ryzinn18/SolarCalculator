@@ -1,7 +1,7 @@
 # SolarCalculator/src/backend/solar_potential.py
 # This module gets the solar iridescence data for a given address.
 from requests import get as r_get
-from utils import SolarPotentialData, EventReadyForResults
+from utils import SolarPotentialData, EventReadyForResults, Status
 from config import NREL_API_KEY
 from logging import getLogger
 from json import JSONDecodeError
@@ -83,9 +83,9 @@ def get_solar_potential(input_data: dict) -> SolarPotentialData:
 
     LOGGER.info(f'solar_potential_handler() called for given event: {input_data}')
 
-    if not input_data.get('uid') or not input_data.get('address') or not input_data.get('consumption_annual'):
-        LOGGER.error(f'The event passed to solar_potential_handler() does not have necessary attribute(s).')
-        raise KeyError('The event passed to solar_potential_handler() does not have necessary attribute(s).')
+    # if not input_data.get('uid') or not input_data.get('address') or not input_data.get('consumption_annual'):
+    #     LOGGER.error(f'The event passed to solar_potential_handler() does not have necessary attribute(s).')
+    #     raise KeyError('The event passed to solar_potential_handler() does not have necessary attribute(s).')
 
     address = input_data.get('address')
     annual_consumption = input_data.get('consumption_annual')
@@ -122,18 +122,27 @@ def solar_potential_handler(event: dict, context) -> dict:
 
     LOGGER.info(f'Called Lambda Handler function for getting solar data event for uid: {event["uid"]}')
 
-    # Handle getting the necessary data
     input_data = event['input_data']
-    solar_data = get_solar_potential(input_data=input_data)
-    out_event = EventReadyForResults(
+    # Handle getting the necessary data
+    try:
+        solar_data = get_solar_potential(input_data=input_data)
+        status = Status(status_code=200, message="get_solar_potential() called successfully.")
+        LOGGER.info(f'Lambda Handler for solar data successfully executed for uid: {event["uid"]}')
+    except Exception as e:
+        solar_data = dict()
+        status = Status(status_code=400, message=f"get_solar_potential() called unsuccessfully due to error: {e.__repr__()}")
+        LOGGER.error(e, exc_info=True)
+
+    return EventReadyForResults(
         uid=event['uid'],
+        time_stamp=event['time_stamp'],
+        status=status,
         input_data=input_data,
         solar_data=solar_data
-    )
-
-    LOGGER.info(f'Lambda Handler for solar data successfully executed for uid: {event["uid"]}')
-    return out_event.dict()
+    ).dict()
 
 
 if __name__ == '__main__':
+    from utils import SAMPLES, import_json
+    print(solar_potential_handler(event=import_json(SAMPLES['event_ready_for_solar']), context=None)['status'])
     pass

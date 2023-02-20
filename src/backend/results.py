@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from pandas import DataFrame
 from boto3 import resource as boto_resource
 
-from utils import Results, EventFinal, MONTHS_MAP, IntListMonthly, FloatListMonthly, import_json, SAMPLES
+from utils import Results, EventFinal, MONTHS_MAP, IntListMonthly, FloatListMonthly, import_json, SAMPLES, Status
 from config import AWS_ACCESS_KEY, AWS_SECRET_KEY, DYNAMODB_TABLE_NAME
 
 LOGGER = getLogger(__name__)
@@ -279,22 +279,29 @@ def results_handler(event: dict, context) -> dict:
 
     LOGGER.info(f'Called Lambda handler function for getting input data event for uid: {event["uid"]}')
 
-    # Handle getting the necessary data
     input_data = event['input_data']
     solar_data = event['solar_data']
-    results_data = get_results(
-        input_data=input_data,
-        solar_data=solar_data
-    )
-    out_event = EventFinal(
+    # Handle getting the necessary data
+    try:
+        results_data = get_results(
+            input_data=input_data,
+            solar_data=solar_data
+        )
+        status = Status(status_code=200, message="get_results() called successfully.")
+        LOGGER.info(f'Lambda Handler for results data successfully executed for uid: {event["uid"]}')
+    except Exception as e:
+        results_data = dict()
+        status = Status(status_code=400, message=f"get_results() called unsuccessfully due to error: {e.__repr__()}")
+        LOGGER.error(e, exc_info=True)
+
+    return EventFinal(
         uid=event['uid'],
+        time_stamp=event['time_stamp'],
+        status=status,
         input_data=input_data,
         solar_data=solar_data,
         results_data=results_data
-    )
-
-    LOGGER.info(f'Lambda Handler for results data successfully executed for uid: {event["uid"]}')
-    return out_event.dict()
+    ).dict()
 
 
 def DEPRECATED_create_out_csv(header: dict, data_df: DataFrame, footer: dict, out_path: Union[PathLike, str]) -> None:
@@ -337,5 +344,5 @@ def DEPRECATED_create_out_csv(header: dict, data_df: DataFrame, footer: dict, ou
 
 
 if __name__ == '__main__':
-    results_handler(import_json(SAMPLES['event_ready_for_results']), None)
+    print(results_handler(import_json(SAMPLES['event_ready_for_results']), None)['status'])
     pass
