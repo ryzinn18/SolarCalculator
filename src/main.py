@@ -1,43 +1,42 @@
 # SolarCalculator/src/main.py
-# This is the main module for running this program
-from src.utils import SAMPLES
-from src.backend import inputs as inp, solar_potential as sp, results as res
-from logging import basicConfig, getLogger, INFO
+# This is the main module for running this program.
+from utils import SAMPLES, import_json
+from backend.inputs import get_inputs
+from backend.solar_potential import get_solar_potential
+from backend.results import get_results
+from logging import getLogger
 
-basicConfig(
-    filename='logs/main.log',
-    level=INFO,
-    format='%(levelname)s:%(filename)s:%(asctime)s:%(funcName)s(): %(message)s',
-    datefmt='%Y/%m/%d-%H.%M.%S',
-    filemode='w',
-)
 LOGGER = getLogger(__name__)
 
 
-def main():
+def main(event: dict, context) -> dict:
+    """SolarCalculator's main function. Set up to run locally or via AWS Lambda."""
+
     LOGGER.info('main() called.')
 
     # Get Input data
-    data_input = inp.input_handler(
-        input_type='csv',
-        input_source=SAMPLES['csv_valid']
+    data_input = get_inputs(
+        input_event=event,
     )
 
-    LOGGER.info(f'InputData successfully received for name: {data_input.name}')
-    print('here')
+    LOGGER.info(f'InputData successfully received for uid: {data_input.uid}')
+
     # Get Solar Potential data
-    data_solar_potential = sp.get_solar_potential(
-        address=data_input.address,
-        annual_consumption=data_input.consumption_annual
+    data_solar_potential = get_solar_potential(
+        input_data=data_input
     )
-    LOGGER.info(f'SolarPotentialData data successfully received for address: {data_solar_potential.address}')
+    LOGGER.info(f'SolarPotentialData data successfully received for uid: {data_solar_potential.uid}')
 
     # Get Results data
-    data_results = res.get_results(input_data=data_input, solar_potential_data=data_solar_potential)
-    LOGGER.info(f'Results data successfully received for: {data_results.name}')
+    data_results = get_results(
+        input_data=data_input,
+        solar_data=data_solar_potential
+    )
+    LOGGER.info(f'Results data successfully received for: {data_results.uid}')
 
-    return data_input
+    return data_results.dict()
 
 
 if __name__ == '__main__':
-    main()
+    main(event=import_json(SAMPLES['event_valid_form']), context=None)
+    pass

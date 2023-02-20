@@ -2,7 +2,7 @@
 from pytest import raises as p_raises
 from utils import import_json, SAMPLES
 from backend import input_csv, input_xlsx, input_sheets, \
-    input_handler, InputData, InputError
+    get_inputs, InputData, InputError
 from backend.inputs import _validate_mod_kwh, _calculate_cost_per_kwh
 
 
@@ -118,12 +118,12 @@ def test_input_handler():
     THEN Calls the correct corresponding function and returns a InputData object
     """
     # Assert that when passed valid inputs, the handler returns a InputData object
-    assert isinstance(input_handler(input_type='csv', input_source=SAMPLES['csv_valid']), InputData)
-    assert isinstance(input_handler(input_type='xlsx', input_source=SAMPLES['xlsx_valid']), InputData)
-    assert isinstance(input_handler(input_type='sheet', input_source=SAMPLES['sheet']), InputData)
+    assert isinstance(get_inputs(input_type='csv', input_source=SAMPLES['csv_valid']), InputData)
+    assert isinstance(get_inputs(input_type='xlsx', input_source=SAMPLES['xlsx_valid']), InputData)
+    assert isinstance(get_inputs(input_type='sheet', input_source=SAMPLES['sheet']), InputData)
     # Assert that the accepted input types are recognized
     assert ['csv', 'xlsx', 'sheet'] == InputError.valid_input_types
     # Assert that InputError is passed when an invalid kw arg for input_type is passed.
     with p_raises(InputError):
-        input_handler(input_type='fail', input_source=SAMPLES['csv_valid'])
+        get_inputs(input_type='fail', input_source=SAMPLES['csv_valid'])
 

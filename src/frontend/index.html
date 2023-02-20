@@ -16,7 +16,9 @@
         <!-- SimpleLightbox plugin CSS-->
         <link href="https://cdnjs.cloudflare.com/ajax/libs/SimpleLightbox/2.1.0/simpleLightbox.min.css" rel="stylesheet" />
         <!-- Core theme CSS (includes Bootstrap)-->
-        <link href="src/frontend/css/styles.css" rel="stylesheet" />
+        <link href="css/styles.css" rel="stylesheet" />
+        <!-- Import JS script for calling API when Running Tool -->
+        <script src="js/callApi.js"></script>
     </head>
     <body id="page-top">
         <!-- Navigation-->
@@ -141,21 +143,30 @@
                 </div>
 
                 <div class="row gx-4 gx-lg-5 justify-content-center">
-                    <form id="tool-frm" name="simple-contact-form" accept-charset="utf-8" action="https://formspree.io/f/mnqynyol" method="post">
+                    <form id="tool-frm" name="data-input-form" accept-charset="utf-8" method="post" onsubmit="callAPI(document.getElementById('name').value,document.getElementById('address').value,document.getElementById('mod_kwh').value,[820,780,760,740,720,710,705,715,710,702,750,780],[155.8,148.2,144.4,140.6,140.6,134.9,133.95,135.85,134.9,133.38,142.5,148.2])">
 
                         <fieldset id="tool-frm-inputs">
                             <center>
                             <table>
+                            <!--Name Row-->
                                 <tr>
-                                    <td><b>Enter Username:</b></td>
+                                    <td><label for="name"><b>Enter Username:</b></label></td>
                                     <td>
-                                        <input class="form-control" type="text" name="name" id="name" placeholder="Username..."/>
+                                        <input class="form-control" type="text" name="name" id="name" placeholder="Username..." required/>
                                     </td>
                                 </tr>
+                                <!--Address Row-->
                                 <tr>
                                     <td><b>Enter Address or Zip: </b></td>
                                     <td>
-                                        <input class="form-control" type="text" name="name" id="address" placeholder="Address..."/>
+                                        <input class="form-control" type="text" name="address" id="address" placeholder="Address..." required/>
+                                    </td>
+                                </tr>
+                                <!--Mod kWh Row-->
+                                <tr>
+                                    <td><b>Solar Module kWh Rating*: </b></td>
+                                    <td>
+                                        <input class="form-control" type="text" name="address" id="mod_kwh" value="0.4"/>
                                     </td>
                                 </tr>
                             </table>
@@ -321,6 +332,7 @@
 
                             <div class="d-grid" >
                                 <center><button class="btn btn-primary btn-xl" id="submitButton" type="submit" value="Submit" >Submit</button></center>
+
                             </div>
 
                         </fieldset>
@@ -339,11 +351,48 @@
         <!-- SimpleLightbox plugin JS-->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/SimpleLightbox/2.1.0/simpleLightbox.min.js"></script>
         <!-- Core theme JS-->
-        <script src="src/frontend/js/scripts.js"></script>
+        <script src="js/scripts.js"></script>
         <!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *-->
         <!-- * *                               SB Forms JS                               * *-->
         <!-- * * Activate your form at https://startbootstrap.com/solution/contact-forms * *-->
         <!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *-->
         <script src="https://cdn.startbootstrap.com/sb-forms-latest.js"></script>
     </body>
+
+
+
+<!--    <head>-->
+<!--    <meta charset="UTF-8">-->
+<!--    <title>Hello World</title>-->
+    <!-- Add some CSS to change client UI -->
+<!--    <style>-->
+<!--    body {-->
+<!--        background-color: #232F3E;-->
+<!--        }-->
+<!--    label, button {-->
+<!--        color: #FF9900;-->
+<!--        font-family: Arial, Helvetica, sans-serif;-->
+<!--        font-size: 20px;-->
+<!--        margin-left: 40px;-->
+<!--        }-->
+<!--     input {-->
+<!--        color: #232F3E;-->
+<!--        font-family: Arial, Helvetica, sans-serif;-->
+<!--        font-size: 20px;-->
+<!--        margin-left: 20px;-->
+<!--        }-->
+<!--    </style>-->
+
+<!--</head>-->
+<!--<body>-->
+<!--    <form>-->
+<!--        <label>Name :</label>-->
+<!--        <input type="text" id="name">-->
+<!--        <label>Address:</label>-->
+<!--        <input type="text" id="address">-->
+<!--        &lt;!&ndash; set button onClick method to call function we defined passing input values as parameters &ndash;&gt;-->
+<!--        <button type="button" onclick="callAPI(document.getElementById('name').value,document.getElementById('address').value)">Run Tool</button>-->
+<!--        -->
+<!--    </form>-->
+<!--</body>-->
 </html>

@@ -1,9 +1,10 @@
 {
+    "uid": "Ryan2023-02-15 00:55:15.142014",
     "name": "Ryan",
     "address": "3940 State Street, 93105",
-    "mod_kwh": "fail",
+    "mod_kwh": 1.8,
     "consumption_monthly": [
-        "fail",
+        -820,
         780,
         760,
         740,
@@ -18,7 +19,7 @@
     ],
     "consumption_annual": 8912,
     "cost_monthly": [
-        "fail",
+        -155.8,
         148.2,
         144.4,
         140.6,
@@ -31,8 +32,8 @@
         142.5,
         148.2
     ],
-    "cost_annual": 1693.28,
-    "cost_per_kwh": 0.19,
+    "cost_annual": 2000,
+    "cost_per_kwh": 0.10,
     "note": null,
     "source": "Potential solar data sourced from pvwatts.nrel.gov",
     "units_consumption": "kiloWattHours",
