@@ -5,7 +5,6 @@ from logging import getLogger, basicConfig, INFO
 from typing import Union, Dict, Any, List, Type, TypeVar
 from os.path import join
 from pathlib import PurePath, Path
-from datetime import datetime
 
 basicConfig(
     filename='logs/main.log',
