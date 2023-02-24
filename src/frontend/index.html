@@ -143,7 +143,7 @@
                 </div>
 
                 <div class="row gx-4 gx-lg-5 justify-content-center">
-                    <form id="tool-frm" name="data-input-form" accept-charset="utf-8" method="post" onsubmit="callAPI(document.getElementById('name').value,document.getElementById('address').value,document.getElementById('mod_kwh').value,[820,780,760,740,720,710,705,715,710,702,750,780],[155.8,148.2,144.4,140.6,140.6,134.9,133.95,135.85,134.9,133.38,142.5,148.2])">
+                    <form id="tool-frm" name="data-input-form" accept-charset="utf-8" method="post">
 
                         <fieldset id="tool-frm-inputs">
                             <center>
@@ -301,7 +301,7 @@
                             </table></center>
                             <br>
                             <div class="d-grid" >
-                                <center><button class="btn btn-primary btn-xl" id="runToolButton" type="submit" value="Submit" >Run Tool</button></center>
+                                <center><button class="btn btn-primary btn-xl" id="runToolButton" type="button" onclick="callAPI(document.getElementById('name').value,document.getElementById('address').value,document.getElementById('mod_kwh').value,[820,780,760,740,720,710,705,715,710,702,750,780],[155.8,148.2,144.4,140.6,140.6,134.9,133.95,135.85,134.9,133.38,142.5,148.2])">Run Tool</button></center>
                             </div>
 
                         </fieldset>

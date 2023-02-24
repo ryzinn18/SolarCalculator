@@ -23,8 +23,8 @@ var callAPI = (name,address,mod_kwh,consumption_monthly,cost_monthly)=>{
         redirect: 'follow'
     };
     // make API call with parameters and use promises to get response
-    fetch("https://xbmv3pz3k7.execute-api.us-west-1.amazonaws.com/dev", requestOptions)
+    fetch("https://n8x89n1302.execute-api.us-west-1.amazonaws.com/dev", requestOptions)
     .then(response => response.text())
-    .then(result => alert(JSON.parse(result).uid))
+    .then(result => alert(JSON.parse(result).status.status_code))
     .catch(error => console.log('error', error));
 }
