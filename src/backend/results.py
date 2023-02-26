@@ -71,13 +71,13 @@ def post_data_csv_to_s3(data_df: DataFrame, obj_key: str, bucket_name='sc-output
     return S3Uri(bucket_name=bucket_name, obj_key=obj_key).path
 
 
-def post_obj_to_s3(obj_format: Literal['png', 'csv'], bucket_name: str, obj_key: str, content_type: str) -> S3Uri.path:
+def post_obj_to_s3(bucket_name: str, obj_key: str, content_type: str, obj_format='png') -> S3Uri.path:
     """Posts an object (e.g., image) to s3 bucket."""
 
-    obj_key = obj_key + '.png'
+    obj_key = obj_key + '.' + obj_format
     # Create stream for the object
     data = io.BytesIO()
-    plt.savefig(fname=data, format=obj_format)
+    plt.savefig(fname=data, format=obj_format, transparent=True)
     # Set stream position to start of stream
     data.seek(0)
     # Get bucket item, post the object, and return response
@@ -164,7 +164,6 @@ def create_comparison_graph(
     bucket_name = f"sc-outputs-graph-{graph_type}"
     url = post_obj_to_s3(
         bucket_name=bucket_name,
-        obj_format='png',
         obj_key='test' + uid,
         content_type='image/png'
     )
@@ -344,5 +343,5 @@ def DEPRECATED_create_out_csv(header: dict, data_df: DataFrame, footer: dict, ou
 
 
 if __name__ == '__main__':
-    print(results_handler(import_json(SAMPLES['event_ready_for_results']), None)['status'])
+    print(results_handler(import_json(SAMPLES['event_ready_for_results']), None)['results_data'])
     pass
