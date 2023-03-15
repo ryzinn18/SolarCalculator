@@ -1,5 +1,9 @@
 # SolarCalculator/src/backend/results.py
 # Integrates InputData and SolarPotentialData into Results data object and creates outputs
+import matplotlib.pyplot as plt
+from pandas import DataFrame
+from boto3 import resource as boto_resource
+
 from csv import writer as csv_writer
 from logging import getLogger
 from math import ceil
@@ -8,12 +12,9 @@ from json import loads as j_loads, dumps as j_dumps
 from os import PathLike
 from typing import Union, Sequence, Collection, Callable, Literal
 import io
+from datetime import datetime as dt
 
-import matplotlib.pyplot as plt
-from pandas import DataFrame
-from boto3 import resource as boto_resource
-
-from utils import Results, EventFinal, MONTHS_MAP, IntListMonthly, FloatListMonthly, import_json, SAMPLES, Status
+from utils import Results, MONTHS_MAP, IntListMonthly, FloatListMonthly, Status, check_http_response
 from config import AWS_ACCESS_KEY, AWS_SECRET_KEY, DYNAMODB_TABLE_NAME
 
 LOGGER = getLogger(__name__)
@@ -21,13 +22,13 @@ S3 = boto_resource('s3', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key
 DYNAMODB = boto_resource('dynamodb', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_SECRET_KEY)
 
 
-class S3Uri:
+class S3Url:
     __slots__ = 'path'
 
     def __init__(self, bucket_name: str, obj_key: str):
         """Simple class for creating specific s3 object paths."""
 
-        self.path = f"s3://{bucket_name}/{obj_key}"
+        self.path = f"https://{bucket_name}.s3.us-west-1.amazonaws.com/{obj_key.replace(':', '%')}"
 
 
 def _average(iterable: Union[Sequence, Collection]) -> int:
@@ -57,7 +58,7 @@ def get_data_df(
     return result
 
 
-def post_data_csv_to_s3(data_df: DataFrame, obj_key: str, bucket_name='sc-outputs-csv') -> S3Uri.path:
+def post_data_csv_to_s3(data_df: DataFrame, obj_key: str, bucket_name='sc-outputs-csv') -> S3Url.path:
     """Posts a DataFrame  as a csv to s3 bucket"""
 
     obj_key = obj_key + '.csv'
@@ -66,12 +67,12 @@ def post_data_csv_to_s3(data_df: DataFrame, obj_key: str, bucket_name='sc-output
     data_df.to_csv(csv_buffer)
     # Post the object to dedicated bucket and return the http response
     S3.Bucket(bucket_name).put_object(Body=csv_buffer.getvalue(), Key=obj_key)
-    # _check_response(response=response['ResponseMetadata']['HTTPStatusCode'], bucket_name=bucket_name, key=obj_key)
+    # check_response(response=response['ResponseMetadata']['HTTPStatusCode'])
 
-    return S3Uri(bucket_name=bucket_name, obj_key=obj_key).path
+    return S3Url(bucket_name=bucket_name, obj_key=obj_key).path
 
 
-def post_obj_to_s3(bucket_name: str, obj_key: str, content_type: str, obj_format='png') -> S3Uri.path:
+def post_obj_to_s3(bucket_name: str, obj_key: str, content_type: str, obj_format='png') -> S3Url.path:
     """Posts an object (e.g., image) to s3 bucket."""
 
     obj_key = obj_key + '.' + obj_format
@@ -84,7 +85,7 @@ def post_obj_to_s3(bucket_name: str, obj_key: str, content_type: str, obj_format
     bucket = S3.Bucket(bucket_name)
     bucket.put_object(Body=data, ContentType=content_type, Key=obj_key)
 
-    return S3Uri(bucket_name=bucket_name, obj_key=obj_key).path
+    return S3Url(bucket_name=bucket_name, obj_key=obj_key).path
 
 
 def post_item_to_dynamodb(dynamo_table, item: dict) -> int:
@@ -95,22 +96,9 @@ def post_item_to_dynamodb(dynamo_table, item: dict) -> int:
     )['ResponseMetadata']['HTTPStatusCode']
 
 
-def check_http_response(response_code: int, key: str) -> None:
-    """Check if a response code is non 200 and log/raise exception if so."""
-
-    if response_code < 200 or response_code >= 300:
-        LOGGER.error(
-            f'A {response_code} response was given when trying to post item with key "{key}" to s3 bucket '
-            + f'"{DYNAMODB_TABLE_NAME}" '
-        )
-        raise Exception(
-            f'The item with key "{key}" gave a non 200 response when posting to "{DYNAMODB_TABLE_NAME}".'
-        )
-
-
 def create_comparison_graph(
         title: str, df1: DataFrame, df2: DataFrame, label1: str, label2: str, y_label: str,
-        graph_type: Literal['energy', 'cost'], uid: str) -> S3Uri.path:
+        graph_type: Literal['energy', 'cost'], uid: str) -> S3Url.path:
     """Creates a graph with 2 overlying plots for comparison."""
 
     LOGGER.info(f'Creating the {graph_type} comparison graph for uid "{uid}"')
@@ -237,21 +225,23 @@ def get_results(input_data: dict, solar_data: dict) -> Results:
 
     # Create the Results data object
     result = Results(
-        uid=input_data.get('uid'),
-        name=input_data.get('name'),
-        address=input_data.get('address'),
-        actual_consumption_monthly=input_data.get('consumption_monthly'),
-        actual_cost_monthly=input_data.get('cost_monthly'),
-        potential_production_monthly=solar_data.get('solar_potential_monthly'),
+        uid=input_data['uid'],
+        name=input_data['name'],
+        time_stamp=dt.now().__str__(),
+        status=Status(status_code=200, message="get_results() called successfully."),
+        address=input_data['address'],
+        actual_consumption_monthly=input_data['consumption_monthly'],
+        actual_cost_monthly=input_data['cost_monthly'],
+        potential_production_monthly=solar_data['solar_potential_monthly'],
         potential_cost_monthly=potential_cost_monthly,
         savings_monthly=savings_monthly,
         cost_reduction_monthly=cost_reduction_monthly,
         cost_reduction_average=_average(cost_reduction_monthly),
         results_data_json=results_df.to_json(),
         mod_quantity=mod_quantity,
-        uri_data_csv=url_data_csv,
-        uri_graph_cost=url_cost_graph,
-        uri_graph_energy=url_energy_graph
+        url_data_csv=url_data_csv,
+        url_graph_cost=url_cost_graph,
+        url_graph_energy=url_energy_graph
     )
     LOGGER.info(f'Results data object successfully created and validated: {result}')
 
@@ -265,7 +255,10 @@ def get_results(input_data: dict, solar_data: dict) -> Results:
     }
     # Post item to DynamoDB with necessary data and verify a non 200 response is given
     response_code = post_item_to_dynamodb(dynamo_table=DYNAMODB.Table(DYNAMODB_TABLE_NAME), item=table_item)
-    check_http_response(response_code=response_code, key=result.uid)
+    if not check_http_response(response_code=response_code):
+        note = f"A {response_code} response was returned when writing to DynamoDB table '{DYNAMODB_TABLE_NAME}'."
+        LOGGER.error(note)
+        raise Exception(note)
 
     LOGGER.info(
         f'Necessary data successfully written to DynamoDB table "{DYNAMODB_TABLE_NAME}" with key "{result.uid}"'
@@ -273,34 +266,31 @@ def get_results(input_data: dict, solar_data: dict) -> Results:
     return result
 
 
-def results_handler(event: dict, context) -> dict:
-    """AWS Lambda Handler function for getting final results event object."""
+def results_handler(input_data: dict, solar_data: dict) -> dict:
+    """Handler function for getting final results event object."""
 
-    LOGGER.info(f'Called Lambda handler function for getting input data event for uid: {event["uid"]}')
+    LOGGER.info(f'Called handler function for getting input data event for uid: {input_data["uid"]}')
 
-    input_data = event['input_data']
-    solar_data = event['solar_data']
     # Handle getting the necessary data
     try:
         results_data = get_results(
             input_data=input_data,
             solar_data=solar_data
-        )
-        status = Status(status_code=200, message="get_results() called successfully.")
-        LOGGER.info(f'Lambda Handler for results data successfully executed for uid: {event["uid"]}')
+        ).dict()
+        LOGGER.info(f'Lambda Handler for results data successfully executed for uid: {input_data["uid"]}')
     except Exception as e:
-        results_data = dict()
-        status = Status(status_code=400, message=f"get_results() called unsuccessfully due to error: {e.__repr__()}")
+        time_stamp = dt.now().__str__()
+        uid = input_data.get("uid") if input_data.get("uid") else "NA" + time_stamp
+        results_data = {
+            "time_stamp": time_stamp,
+            "uid": uid,
+            "status": Status(
+                status_code=400, message=f"get_results() called unsuccessfully due to error: {e.__repr__()}"
+            )
+        }
         LOGGER.error(e, exc_info=True)
 
-    return EventFinal(
-        uid=event['uid'],
-        time_stamp=event['time_stamp'],
-        status=status,
-        input_data=input_data,
-        solar_data=solar_data,
-        results_data=results_data
-    ).dict()
+    return results_data
 
 
 def DEPRECATED_create_out_csv(header: dict, data_df: DataFrame, footer: dict, out_path: Union[PathLike, str]) -> None:
@@ -343,5 +333,5 @@ def DEPRECATED_create_out_csv(header: dict, data_df: DataFrame, footer: dict, ou
 
 
 if __name__ == '__main__':
-    print(results_handler(import_json(SAMPLES['event_ready_for_results']), None)['results_data'])
-    pass
+    from utils import import_json, SAMPLES
+    print(results_handler(import_json(SAMPLES['event_ready_for_solar']), import_json(SAMPLES['event_ready_for_results'])).get("status"))
