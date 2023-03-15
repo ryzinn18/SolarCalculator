@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<body id="page-top">
+    <!-- Masthead-->
+    <header class="masthead">
+        <div class="container px-4 px-lg-5 h-100">
+            <div class="row gx-4 gx-lg-5 h-100 align-items-center justify-content-center text-center">
+                <div class="col-lg-8 align-self-end">
+                    <h1 class="text-white font-weight-bold">The Solar Calculator</h1>
+                    <hr class="divider" />
+                </div>
+                <div class="col-lg-8 align-self-baseline">
+                    <p class="text-white-75 mb-5">Learn how much energy and money you could save with solar panels installed on your&nbsp;home!</p>
+<!--                        <a class="btn btn-primary btn-xl" href="#about">Find Out More</a>   // Could have the about section be a separate page and thi be the button to it?-->
+                </div>
+            </div>
+        </div>
+    </header>
+    <!--  How To  -->
+    <section class="page-section bg-primary" id="howto">
+        <div class="container px-4 px-lg-5">
+            <div class="row gx-4 gx-lg-5 justify-content-center">
+                <div class="col-lg-8 text-center">
+                    <h2 class="text-white mt-0">How To Use The Solar Calculator</h2>
+                    <hr class="divider divider-light" />
+                    <p class="text-white-75 mb-4">Using The Solar Calculator is simple! All you need is your energy consumption & cost over the past year. You can acquire this easily from your utility company online or over the phone. Once you have this, enter your consumption info and address into the section below and hit the Run&nbsp;Tool&nbsp;button.</p>
+                    <p class="text-white-75 mb-4"><b><u>Note:</u></b> that you do not need to use your personal address. You can use a nearby one, such as your local library. Or, you could just enter your city and state. Keep in mind, the closer the address you enter is to your actual residence, the more accurate your results&nbsp;are!</p>
+                    <p class="text-white-75 mb-4"><b><u>Note:</u></b> energy consumption must be entered in kiloWattHours (kWh) per month. Your utility company will likely provide your consumption in this metric. If not, Google offers simple conversion&nbsp;tools.</p>
+<!--                        <p class="text-white-75 mb-4">To learn more about this project, check out our About Us page!</p>-->
+                    <a class="btn btn-light btn-xl" href="#services">Get Started!</a>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!--  Run Tool  -->
+    <section class="page-section" id="runtool">
+        <div class="container px-4 px-lg-5" >
+            <div class="row gx-4 gx-lg-5 justify-content-center">
+                <div class="col-lg-8 col-xl-6 text-center">
+                    <h2 class="mt-0">Run the Tool!</h2>
+                    <hr class="divider" />
+                    <p class="text-muted mb-5">Enter a username, address or zip, and energy consumption & cost below. Once you are done, click the Run Tool&nbsp;button!<br><br>Remember, you do not need to enter your actual address. You can enter a nearby address such as your local library or post&nbsp;office.</p>
+                    <hr class="divider" />
+                </div>
+            </div>
+            <div class="row gx-4 gx-lg-5 justify-content-center">
+                <form id="input-data" name="input-data" accept-charset="utf-8" method="POST" action="/run-tool">
+                    <fieldset id="tool-frm-inputs">
+                        <center>
+                        <table>
+                            <!--Name Row-->
+                            <tr>
+                                <td><label for="name"><b>Enter Username:</b></label></td>
+                                <td>
+                                    <input class="form-control" type="text" name="name" id="name" placeholder="Username..." required/>
+                                </td>
+                            </tr>
+                            <!--Address Row-->
+                            <tr>
+                                <td><b>Enter Address or Zip: </b></td>
+                                <td>
+                                    <input class="form-control" type="text" name="address" id="address" placeholder="Address..." required/>
+                                </td>
+                            </tr>
+                            <!--Mod kWh Row-->
+                            <tr>
+                                <td><b>Solar Module kWh Rating*: </b></td>
+                                <td>
+                                    <input class="form-control" type="text" name="address" id="mod_kwh" value="0.4"/>
+                                </td>
+                            </tr>
+                        </table>
+                        <br>
+                        <table>
+                            <!--Header Row-->
+                            <tr>
+                                <th width="20%"><center>Month</center></th>
+                                <th width="40%"><center>Energy</center></th>
+                                <th width="40%"><center>Cost</center></th>
+                            </tr>
+                            <!-- Rows Of Input Form -->
+                            {% for month in months %}
+                            <tr>
+                                <td><center>{{ month }}:</center></td>
+                                <td>
+                                    <input class="form-control" type="text" name="energy{{ month }}" id="energy{{ month }}" placeholder="kWh"/>
+                                </td>
+                                <td>
+                                    <input class="form-control" type="text" name="cost{{ month }}" id="cost{{ month }}" placeholder="$"/>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </table></center>
+                        <br>
+                        <div class="d-grid" >
+                            <center><button class="btn btn-primary btn-xl" id="input-data-button" type="submit" >Run Tool</button></center>
+                        </div>
+                    </fieldset>
+                </form>
+            </div>
+        </div>
+    </section>
+    <!-- Contact-->
+    <section class="page-section bg-secondary" id="contact">
+        <div class="container px-4 px-lg-5" >
+            <div class="row gx-4 gx-lg-5 justify-content-center">
+                <div class="col-lg-8 col-xl-6 text-center">
+                    <h2 class="mt-0">Let's Get In Touch!</h2>
+                    <hr class="divider" />
+                    <p class="mb-5">Have questions or comments about The Solar Calculator? Don't hesitate to reach out!</p>
+                </div>
+            </div>
+            <div class="row gx-4 gx-lg-5 justify-content-center">
+                <form id="fs-frm" name="simple-contact-form" accept-charset="utf-8" action="https://formspree.io/f/mnqynyol" method="post">
+                <center><div class="col-lg-8 col-xl-6 text-center">
+                    <fieldset id="fs-frm-inputs">
+                        <input class="form-control" id="full-name" type="text" name="name" placeholder="Enter your name..." /><br>
+                        <input class="form-control" id="email-address" type="email" name="_replyto" placeholder="Enter your email..." /><br>
+                        <textarea class="form-control" id="message" name="message" placeholder="Enter your message..." style="height: 10rem" data-sb-validations="required"></textarea><br>
+                        <input type="hidden" name="_subject" id="email-subject" value="Solar Calculator Comment">
+
+                        <div class="d-grid" >
+                            <center><button class="btn btn-primary btn-xl" id="submitButton" type="submit" value="Submit" >Submit</button></center>
+
+                        </div>
+
+                    </fieldset>
+                </div></center>
+                </form>
+            </div>
+        </div>
+    </section>
+</body>
+{% endblock %}
