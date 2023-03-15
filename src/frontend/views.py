@@ -62,18 +62,18 @@ def run_tool():
             "address": address,
             "mod_kwh": 1,
             "monthly_data": {
-                "January": [100, 155.8],
-                "February": [100, 148.8],
-                "March": [100, 144.8],
-                "April": [100, 140.4],
-                "May": [100, 140.2],
-                "June": [100, 134.8],
-                "July": [100, 133.2],
-                "August": [100, 135.8],
-                "September": [100, 134.4],
-                "October": [100, 133.4],
-                "November": [100, 142.8],
-                "December": [100, 148.8]
+                "January": [1000, 155.8],
+                "February": [1000, 148.8],
+                "March": [1000, 144.8],
+                "April": [1000, 140.4],
+                "May": [1000, 140.2],
+                "June": [1000, 134.8],
+                "July": [1000, 133.2],
+                "August": [1000, 135.8],
+                "September": [1000, 134.4],
+                "October": [1000, 133.4],
+                "November": [1000, 142.8],
+                "December": [1000, 148.8]
             }
         }
     }
@@ -88,4 +88,4 @@ def run_tool():
     results = json.loads(lambda_response['Payload'].read().decode("utf-8"))
     print(results['status'])
 
-    return render_template("output.html", user=current_user, output=results)
+    return render_template("output.html", user=current_user, output=results, months=MONTHS_MAP)
