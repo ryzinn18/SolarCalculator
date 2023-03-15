@@ -39,7 +39,8 @@ def _average(iterable: Union[Sequence, Collection]) -> int:
 
 def get_data_df(
         input_data: dict, solar_potential_monthly: IntListMonthly, potential_cost_monthly: FloatListMonthly,
-        savings_monthly: FloatListMonthly, cost_reduction_monthly: FloatListMonthly) -> DataFrame:
+        potential_value: FloatListMonthly, savings_monthly: FloatListMonthly, cost_reduction_monthly: FloatListMonthly
+    ) -> DataFrame:
     """Creates a pandas data frame with all the input, solar, and analysis data and their annual sums."""
 
     LOGGER.info('Creating DataFrame of core data')
@@ -49,6 +50,7 @@ def get_data_df(
         'Consumption kWh': input_data.get('consumption_monthly') + [input_data.get('consumption_annual')],
         'Cost $': input_data.get('cost_monthly') + [input_data.get('cost_annual')],
         'Potential kWh': solar_potential_monthly + [sum(solar_potential_monthly)],
+        'Potential Value $': potential_value + [sum(potential_value)],
         'Potential Cost $': potential_cost_monthly + [sum(potential_cost_monthly)],
         'Savings $': savings_monthly + [sum(savings_monthly)],
         'Cost Reduction %': cost_reduction_monthly + [_average(cost_reduction_monthly)]
@@ -175,11 +177,18 @@ def get_results(input_data: dict, solar_data: dict) -> Results:
         return out
 
     # Calculate Potential Cost, Savings, and Cost Reduction
+    production_value = _helper_calculate(
+        func=lambda a1, a2, a3: round(a1 * a3, 2),
+        zipped=zip(solar_data.get('solar_potential_monthly'), range(12)),
+        arg3=input_data.get("cost_per_kwh")
+    )
+    print(production_value)
     potential_cost_monthly = _helper_calculate(
         func=lambda a1, a2, a3: round((a1 - a2) * a3, 2),
         zipped=zip(input_data.get('consumption_monthly'), solar_data.get('solar_potential_monthly')),
         arg3=input_data.get('cost_per_kwh')
     )
+    print(potential_cost_monthly)
     savings_monthly = _helper_calculate(
         func=lambda a1, a2, a3: round((a1 - a2), 2),
         zipped=zip(input_data.get('cost_monthly'), potential_cost_monthly)
@@ -193,6 +202,7 @@ def get_results(input_data: dict, solar_data: dict) -> Results:
         input_data=input_data,
         solar_potential_monthly=solar_data.get('solar_potential_monthly'),
         potential_cost_monthly=potential_cost_monthly,
+        potential_value=production_value,
         savings_monthly=savings_monthly,
         cost_reduction_monthly=cost_reduction_monthly,
     )
@@ -202,7 +212,7 @@ def get_results(input_data: dict, solar_data: dict) -> Results:
     url_cost_graph = create_comparison_graph(
         title=f"{input_data.get('name')}'s Actual vs Potential Cost",
         df1=results_df['Cost $'].round(),
-        df2=results_df['Potential Cost $'].round(),
+        df2=results_df['Potential Value $'].round(),
         label1='Actual Cost',
         label2='Potential Cost',
         y_label='Dollars',
