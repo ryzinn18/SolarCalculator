@@ -1,10 +1,12 @@
 # SolarCalculator/src/backend/inputs.py
 # Handles an input type by calling the correct input function and validates InputData
 from pydantic import PositiveFloat
-from utils import IntListMonthly, InputData, EventReadyForSolar, Status
+
 from logging import getLogger
 from typing import Callable
 from datetime import datetime as dt
+
+from utils import IntListMonthly, InputData, Status, MONTHS_MAP
 
 LOGGER = getLogger(__name__)
 
@@ -128,6 +130,8 @@ def input_csv(file_path: str, time_stamp: str) -> InputData:
     result = InputData(
         uid=_clean_name(user_data[0]) + time_stamp,
         name=_clean_name(name=user_data[0]),
+        time_stamp=dt.now().__str__(),
+        status=Status(status_code=200, message="get_inputs() called input_csv() successfully."),
         address=user_data[1],
         mod_kwh=_validate_mod_kwh(in_data=user_data[2]),
         consumption_monthly=consumption,
@@ -172,6 +176,8 @@ def input_xlsx(file_path: str, time_stamp: str) -> InputData:
     result = InputData(
         uid=_clean_name(user_data[0]) + time_stamp,
         name=_clean_name(name=user_data[0]),
+        time_stamp=dt.now().__str__(),
+        status=Status(status_code=200, message="get_inputs() called input_xlsx() successfully."),
         address=user_data[1],
         mod_kwh=_validate_mod_kwh(in_data=user_data[2]),
         consumption_monthly=consumption,
@@ -269,6 +275,8 @@ def input_sheets(sheet_id: str, time_stamp: str) -> InputData:
     result = InputData(
         uid=_clean_name(user_data[0][0]) + time_stamp,
         name=_clean_name(user_data[0][0]),
+        time_stamp=dt.now().__str__(),
+        status=Status(status_code=200, message="get_inputs() called input_sheets() successfully."),
         address=user_data[1][0],
         mod_kwh=_validate_mod_kwh(in_data=user_data[2][0]),
         consumption_monthly=consumption,
@@ -283,46 +291,50 @@ def input_sheets(sheet_id: str, time_stamp: str) -> InputData:
 
 
 @validate
-def input_form(input_obj: dict, time_stamp: str) -> InputData:
+def input_form(input_obj: dict) -> InputData:
     """Takes web input object and returns InputData object."""
 
     LOGGER.info(f'Collecting input data from web input object: {input_obj}')
+    consumption_monthly = [input_obj.get("monthly_data")[month][0] for month in MONTHS_MAP.values()]
+    cost_monthly = [input_obj.get("monthly_data")[month][1] for month in MONTHS_MAP.values()]
 
     result = InputData(
-        uid=_clean_name(input_obj['name']) + time_stamp,
-        name=_clean_name(input_obj['name']),
-        address=input_obj['address'],
-        mod_kwh=input_obj['mod_kwh'],
-        consumption_monthly=input_obj['consumption_monthly'],
-        consumption_annual=round(sum(input_obj['consumption_monthly'])),
-        cost_monthly=input_obj['cost_monthly'],
-        cost_annual=round(sum(input_obj['cost_monthly']), 2),
+        uid=input_obj.get("uid"),
+        name=input_obj.get("name"),
+        time_stamp=dt.now().__str__(),
+        status=Status(status_code=200, message="get_inputs() called input_form() successfully."),
+        address=input_obj.get('address'),
+        mod_kwh=input_obj.get('mod_kwh'),
+        consumption_monthly=consumption_monthly,
+        consumption_annual=round(sum(consumption_monthly)),
+        cost_monthly=cost_monthly,
+        cost_annual=round(sum(cost_monthly), 2),
         cost_per_kwh=_calculate_cost_per_kwh(
-            cost=input_obj['cost_monthly'],
-            consumption=input_obj['consumption_monthly']
+            cost=cost_monthly,
+            consumption=consumption_monthly
         )
     )
     LOGGER.info(f'InputData successfully collected from web input object: {input_obj}')
     return result
 
 
-def get_inputs(input_event: dict, time_stamp: str) -> InputData:
+def get_inputs(input_event: dict) -> InputData:
     """Calls correct input function or raises an InputError. Will catch, log and raise Exceptions."""
 
     LOGGER.info(f'The input_handler() has been called for event: {input_event}')
 
-    input_type = input_event['type']
+    input_type = input_event.get('type')
     LOGGER.info(f'The event type has been found to be: {input_type}')
 
     # If/elif/else clause to call correct handler function. Raise and log error if no input function is called.
     if input_type == 'csv':
-        input_data = input_csv(file_path=input_event['csv_source'], time_stamp=time_stamp)
+        input_data = input_csv(file_path=input_event['csv_source'])
     elif input_type == 'xlsx':
-        input_data = input_xlsx(file_path=input_event['xlsx_source'], time_stamp=time_stamp)
+        input_data = input_xlsx(file_path=input_event['xlsx_source'])
     elif input_type == 'sheet':
-        input_data = input_sheets(sheet_id=input_event['sheet_id'], time_stamp=time_stamp)
+        input_data = input_sheets(sheet_id=input_event['sheet_id'])
     elif input_type == 'form':
-        input_data = input_form(input_obj=input_event['form'], time_stamp=time_stamp)
+        input_data = input_form(input_obj=input_event['form'])
     else:
         LOGGER.error(f'The input type passed is invalid: {input_type}')
         raise InputError(
@@ -335,40 +347,33 @@ def get_inputs(input_event: dict, time_stamp: str) -> InputData:
     return input_data
 
 
-def input_handler(event: dict, context) -> dict:
-    """Lambda Handler Function to call get_inputs() and return correct object."""
+def input_handler(event: dict) -> dict:
+    """Handler Function to call get_inputs() and return validated object."""
 
-    LOGGER.info(f'Called Lambda Handler function for getting input data event from event: {event}')
+    LOGGER.info(f'Called Handler function for getting input data event from event: {event}')
 
-    # Ensure the event has attribute 'type', raise and log error if not.
-    # if not event.get('type'):
-    #     LOGGER.error(f'The event passed to the input_handler() does not have attribute "type".')
-    #     raise KeyError('The event passed to the input_handler() does not have attribute "type".')
-    time_stamp = dt.now().__str__()
     # Handle getting the necessary data
     try:
         input_data = get_inputs(
             input_event=event,
-            time_stamp=time_stamp
-        )
-        uid = input_data.uid
-        status = Status(status_code=200, message="get_inputs() called successfully.")
-        LOGGER.info(f'Lambda Handler for input data successfully executed for uid: {input_data.uid}')
+        ).dict()
+        LOGGER.info(f'Lambda Handler for input data successfully executed for uid: {input_data.get("uid")}')
     except Exception as e:
-        uid = 'NA' + time_stamp
-        input_data = dict()
-        status = Status(status_code=400, message=f"get_inputs() called unsuccessfully due to error: {e.__repr__()}")
+        time_stamp = dt.now().__str__()
+        uid = event.get("uid") if event.get("uid") else "NA" + time_stamp
+        input_data = {
+            "uid": uid,
+            "time_stamp": time_stamp,
+            "status": Status(
+                status_code=400,
+                message=f"get_inputs() called unsuccessfully due to error: {e.__repr__()}"
+            )
+        }
         LOGGER.error(e, exc_info=True)
 
-    return EventReadyForSolar(
-        uid=uid,
-        time_stamp=time_stamp,
-        status=status,
-        input_data=input_data
-    ).dict()
+    return input_data
 
 
 if __name__ == '__main__':
     from utils import import_json, SAMPLES
-    print(input_handler(import_json(SAMPLES['event_valid_form']), None)['status'])
-    pass
+    print(input_handler(import_json(SAMPLES['event_valid_form'])).get("cost_monthly"))
