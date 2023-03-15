@@ -36,16 +36,15 @@
     <section class="page-section" id="runtool">
         <div class="container px-4 px-lg-5" >
             <div class="row gx-4 gx-lg-5 justify-content-center">
-                <div class="col-lg-8 col-xl-6 text-center">
+                <div class="col-lg-10 col-xl-8 text-center">
                     <h2 class="mt-0">Run the Tool!</h2>
                     <hr class="divider" />
-                    <p class="text-muted mb-5">Enter a username, address or zip, and energy consumption & cost below. Once you are done, click the Run Tool&nbsp;button!<br><br>Remember, you do not need to enter your actual address. You can enter a nearby address such as your local library or post&nbsp;office.</p>
-                    <hr class="divider" />
-                    <p class="text-muted mb-5">Don't have all the necessary info on hand, but still want to try this tool&nbsp;out?<br><br>Toggle the below switch to enter all default values.<br>
+                    <p class="text-muted mb-5">Don't have all the necessary info on hand, but still want to try this tool&nbsp;out?<br><br>Toggle the below switch to enter all default values.<br><br>
                     <label class="switch" >
-                        <input type="checkbox" onclick=fillOutDefaults()>
+                        <input id="fill-out-def-switch" type="checkbox" value="0" onclick=fillOutDefaults()>
                         <span class="slider round"></span>
                     </label>
+                    <hr class="divider" />
                     </p>
                 </div>
             </div>
