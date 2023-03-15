@@ -1,13 +1,17 @@
 # SolarCalculator/src/utils.py
 from pydantic import BaseModel, conlist, conint, PositiveInt, PositiveFloat
-from config import GOOGLE_API_SHEET_ID
+from boto3 import resource as boto_resource
+
 from logging import getLogger, basicConfig, INFO
 from typing import Union, Dict, Any, List, Type, TypeVar
 from os.path import join
 from pathlib import PurePath, Path
 
+from .config import GOOGLE_API_SHEET_ID, AWS_ACCESS_KEY, AWS_SECRET_KEY
+
 basicConfig(
-    filename='logs/main.log',
+    filename='src/logs/main.log', # When running flask app
+    # filename='logs/main.log',
     level=INFO,
     format='%(levelname)s:%(filename)s:%(asctime)s:%(funcName)s(): %(message)s',
     datefmt='%Y/%m/%d-%H.%M.%S',
@@ -15,6 +19,8 @@ basicConfig(
 )
 
 LOGGER = getLogger(__name__ + '.utils')
+
+DYNAMODB = boto_resource('dynamodb', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_SECRET_KEY)
 
 JSON = Union[Dict[str, Any], List[Any], int, str, float, bool, Type[None]]
 ROOT = Path(__file__).parents[1]
@@ -35,10 +41,10 @@ SAMPLES = {
     'event_valid_csv': join(ROOT, 'src/samples/event_outputs/input_csv.json'),
     'event_valid_xlsx': join(ROOT, 'src/samples/event_inputs/input_xlsx.json'),
     'event_valid_sheet': join(ROOT, 'src/samples/event_inputs/input_sheet.json'),
-    'event_ready_for_solar': join(ROOT, 'src/samples/event_inputs/ready_for_solar.json'),
-    'event_ready_for_results': join(ROOT, 'src/samples/event_inputs/ready_for_results.json'),
+    'event_ready_for_solar': join(ROOT, 'samples/event_inputs/ready_for_solar.json'),
+    'event_ready_for_results': join(ROOT, 'samples/event_inputs/ready_for_results.json'),
 
-    'solar_potential_valid': join(ROOT, 'src/samples/solar_potential_valid.json'),
+    'solar_potential_valid': join(ROOT, 'samples/solar_potential_valid.json'),
 
     'results_valid': join(ROOT, 'src/samples/results_valid.json'),
 
@@ -62,11 +68,34 @@ MONTHS_MAP = {
 }
 
 # Custom types for pydantic objects and type-hinting
-IntListMonthly = conlist(item_type=PositiveInt, min_items=12, max_items=12)
-FloatListMonthly = conlist(item_type=PositiveFloat, min_items=12, max_items=12)
+IntListMonthly = conlist(item_type=int, min_items=12, max_items=12)
+FloatListMonthly = conlist(item_type=float, min_items=12, max_items=12)
 AmbiguousListMonthly = conlist(item_type=float, min_items=12, max_items=12)
 PandasDataFrame = TypeVar('PandasDataFrame')
 StatusCode = conint(gt=99, lt=600)
+
+
+def post_item_to_dynamodb(dynamo_table, item: dict) -> int:
+    """Post a db item to DynamoDB and return the response code."""
+
+    return dynamo_table.put_item(
+        Item=item
+    )['ResponseMetadata']['HTTPStatusCode']
+
+
+def clean_name(name: str) -> str:
+    """Remove all spaces and non-alphanumeric characters from name."""
+
+    return ''.join(s for s in name if s.isalnum())
+
+
+def check_http_response(response_code: int) -> bool:
+    """Check if a response code is non 200 log an error if so, and return correct bool value."""
+
+    if (not response_code) or (response_code < 200) or (response_code >= 300):
+        return False
+    else:
+        return True
 
 
 def import_json(path: str) -> dict:
@@ -149,6 +178,8 @@ class InputData(BaseModel):
     # Required
     uid: str
     name: str
+    time_stamp: str
+    status: Status
     address: str
     mod_kwh: PositiveFloat
     consumption_monthly: IntListMonthly
@@ -165,16 +196,12 @@ class InputData(BaseModel):
     sym_cost = "$"
 
 
-class EventReadyForSolar(BaseModel):
-    uid: str
-    time_stamp: str
-    status: Status
-    input_data: dict
-
-
 class SolarPotentialData(BaseModel):
     # Required
     uid: str
+    name: str
+    time_stamp: str
+    status: Status
     address: str
     solar_potential_monthly: IntListMonthly
     solar_potential_annual: PositiveInt
@@ -186,18 +213,12 @@ class SolarPotentialData(BaseModel):
     sym_solar_potential = "kWh"
 
 
-class EventReadyForResults(BaseModel):
-    uid: str
-    time_stamp: str
-    status: Status
-    input_data: dict
-    solar_data: dict
-
-
 class Results(BaseModel):
     # Required
     uid: str
     name: str
+    time_stamp: str
+    status: Status
     address: str
     actual_consumption_monthly: IntListMonthly
     actual_cost_monthly: FloatListMonthly
@@ -208,18 +229,9 @@ class Results(BaseModel):
     cost_reduction_average: int
     mod_quantity: PositiveInt
     results_data_json: JSON
-    uri_data_csv: str
-    uri_graph_cost: str
-    uri_graph_energy: str
-
-
-class EventFinal(BaseModel):
-    uid: str
-    time_stamp: str
-    status: Status
-    input_data: InputData
-    solar_data: dict
-    results_data: dict
+    url_data_csv: str
+    url_graph_cost: str
+    url_graph_energy: str
 
 
 if __name__ == '__main__':
