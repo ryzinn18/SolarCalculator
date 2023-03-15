@@ -11,7 +11,7 @@
                     <hr class="divider" />
                 </div>
                 <div class="col-lg-8 align-self-baseline">
-                    <p class="text-white-75 mb-5">Learn how much energy and money you could save with solar panels installed on your&nbsp;home!</p>
+                    <p class="text-white-75 mb-5">Learn how much energy and money you could save with a solar array installed on your&nbsp;home!</p>
 <!--                        <a class="btn btn-primary btn-xl" href="#about">Find Out More</a>   // Could have the about section be a separate page and thi be the button to it?-->
                 </div>
             </div>
@@ -25,10 +25,9 @@
                     <h2 class="text-white mt-0">How To Use The Solar Calculator</h2>
                     <hr class="divider divider-light" />
                     <p class="text-white-75 mb-4">Using The Solar Calculator is simple! All you need is your energy consumption & cost over the past year. You can acquire this easily from your utility company online or over the phone. Once you have this, enter your consumption info and address into the section below and hit the Run&nbsp;Tool&nbsp;button.</p>
-                    <p class="text-white-75 mb-4"><b><u>Note:</u></b> that you do not need to use your personal address. You can use a nearby one, such as your local library. Or, you could just enter your city and state. Keep in mind, the closer the address you enter is to your actual residence, the more accurate your results&nbsp;are!</p>
-                    <p class="text-white-75 mb-4"><b><u>Note:</u></b> energy consumption must be entered in kiloWattHours (kWh) per month. Your utility company will likely provide your consumption in this metric. If not, Google offers simple conversion&nbsp;tools.</p>
+                    <p class="text-white-75 mb-4"><b><u>Note:</u></b> that you do not need to use your personal address. You can use just your zip code or a nearby address, such as your local library.</p>
+                    <p class="text-white-75 mb-4"><b><u>Note:</u></b> energy consumption must be entered in kiloWattHours (kWh) per month. Your utility company will likely provide your consumption in this metric.</p>
 <!--                        <p class="text-white-75 mb-4">To learn more about this project, check out our About Us page!</p>-->
-                    <a class="btn btn-light btn-xl" href="#services">Get Started!</a>
                 </div>
             </div>
         </div>
@@ -42,6 +41,12 @@
                     <hr class="divider" />
                     <p class="text-muted mb-5">Enter a username, address or zip, and energy consumption & cost below. Once you are done, click the Run Tool&nbsp;button!<br><br>Remember, you do not need to enter your actual address. You can enter a nearby address such as your local library or post&nbsp;office.</p>
                     <hr class="divider" />
+                    <p class="text-muted mb-5">Don't have all the necessary info on hand, but still want to try this tool&nbsp;out?<br><br>Toggle the below switch to enter all default values.<br>
+                    <label class="switch" >
+                        <input type="checkbox" onclick=fillOutDefaults()>
+                        <span class="slider round"></span>
+                    </label>
+                    </p>
                 </div>
             </div>
             <div class="row gx-4 gx-lg-5 justify-content-center">
@@ -67,7 +72,7 @@
                             <tr>
                                 <td><b>Solar Module kWh Rating*: </b></td>
                                 <td>
-                                    <input class="form-control" type="text" name="address" id="mod_kwh" value="0.4"/>
+                                    <input class="form-control" type="text" name="mod_kwh" id="mod_kwh" value="0.4"/>
                                 </td>
                             </tr>
                         </table>
@@ -75,7 +80,7 @@
                         <table>
                             <!--Header Row-->
                             <tr>
-                                <th width="20%"><center>Month</center></th>
+                                <th width="20%"><center></center></th>
                                 <th width="40%"><center>Energy</center></th>
                                 <th width="40%"><center>Cost</center></th>
                             </tr>
@@ -131,5 +136,6 @@
             </div>
         </div>
     </section>
+<script src="/static/js/fillOutDefaults.js"></script>
 </body>
 {% endblock %}
