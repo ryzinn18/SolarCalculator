@@ -1,53 +1,13 @@
 {
   "uid": "Ryan2023-02-15 00:55:15.142014",
+  "name": "Ryan",
   "time_stamp": "2023-02-15 00:55:15.142014",
-  "status_code": 200,
-  "input_data": {
-    "uid": "Ryan2023-02-15 00:55:15.142014",
-    "name": "Ryan",
-    "address": "3940 State Street, 93105",
-    "mod_kwh": 0.4,
-    "consumption_monthly": [
-      820,
-      780,
-      760,
-      740,
-      720,
-      710,
-      705,
-      715,
-      710,
-      702,
-      750,
-      780
-    ],
-    "consumption_annual": 8892,
-    "cost_monthly": [
-      155.8,
-      148.2,
-      144.4,
-      140.6,
-      140.6,
-      134.9,
-      133.95,
-      135.85,
-      134.9,
-      133.38,
-      142.5,
-      148.2
-    ],
-    "cost_annual": 1693.28,
-    "cost_per_kwh": 0.19,
-    "note": null,
-    "units_consumption": "kiloWattHours",
-    "units_cost": "Dollars",
-    "sym_consumption": "kWh",
-    "sym_cost": "$"
+  "status": {
+    "status_code": 200,
+    "message": "get_solar_potential() called successfully."
   },
-  "solar_data": {
-    "uid": "Ryan2023-02-15 00:55:15.142014",
-    "address": "3940 State Street, 93105",
-    "solar_potential_monthly": [
+  "address": "3940 State Street, 93105",
+  "solar_potential_monthly": [
       671,
       611,
       779,
@@ -61,53 +21,10 @@
       714,
       637
     ],
-    "solar_potential_annual": 8904,
-    "needed_kwh": 5,
-    "input_data": {
-      "uid": "Ryan2023-02-15 00:55:15.142014",
-      "name": "Ryan",
-      "address": "3940 State Street, 93105",
-      "mod_kwh": 0.4,
-      "consumption_monthly": [
-        820,
-        780,
-        760,
-        740,
-        720,
-        710,
-        705,
-        715,
-        710,
-        702,
-        750,
-        780
-      ],
-      "consumption_annual": 8892,
-      "cost_monthly": [
-        155.8,
-        148.2,
-        144.4,
-        140.6,
-        140.6,
-        134.9,
-        133.95,
-        135.85,
-        134.9,
-        133.38,
-        142.5,
-        148.2
-      ],
-      "cost_annual": 1693.28,
-      "cost_per_kwh": 0.19,
-      "note": null,
-      "units_consumption": "kiloWattHours",
-      "units_cost": "Dollars",
-      "sym_consumption": "kWh",
-      "sym_cost": "$"
-    },
-    "note": "Solar potential (kWh) reported over a 30 year average.",
-    "source": "pvwatts.nrel.gov/pvwatts.php",
-    "units_solar_potential": "kiloWattHours",
-    "sym_solar_potential": "kWh"
-  }
+  "solar_potential_annual": 8904,
+  "needed_kwh": 5,
+  "note": "Solar potential (kWh) reported over a 30 year average.",
+  "source": "pvwatts.nrel.gov/pvwatts.php",
+  "units_solar_potential": "kiloWattHours",
+  "sym_solar_potential": "kWh"
 }

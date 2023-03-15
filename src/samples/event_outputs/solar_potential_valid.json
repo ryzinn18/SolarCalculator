@@ -1,5 +1,11 @@
 {
     "uid": "Ryan2023-02-15 00:55:15.142014",
+    "name": "Ryan",
+    "time_stamp": "2023-02-15 00:55:15.142014",
+    "status": {
+        "status_code": 200,
+        "message": "get_solar_potential() called successfully."
+    },
     "address": "3940 State Street, 93105",
     "solar_potential_monthly": [
         683,
