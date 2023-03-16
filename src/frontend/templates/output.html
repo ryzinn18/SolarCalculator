@@ -5,7 +5,7 @@
 <section class="output">
     <div class="container px-4 px-lg-5 h-100">
         <div class="row gx-4 gx-lg-5 h-100 align-items-center justify-content-center text-center">
-            <div class="col-lg-8 align-self-end">
+            <div class="col-lg-10 align-self-end">
                 <!-- Title Header -->
                 <h1 class="text-white font-weight-bold">{{ output.get('name') }}'s Results</h1>
                 <hr class="divider"/>
@@ -18,7 +18,7 @@
                 <hr class="divider"/>
                 <!-- Table: Results Data -->
                 <h2 class="text-white">All Results</h2><br>
-                <div class="card card-results bg-light">
+                <div class="card card-results bg-light" style="width: 700px">
                 <table>
                     <!-- Header Row -->
                     <tr>
@@ -26,8 +26,8 @@
                         <th>Reported Monthly Energy Consumption</th>
                         <th>Reported Monthly Energy Cost</th>
                         <th>Potential Monthly Energy Production</th>
+                        <th>Potential Monthly Energy Value</th>
                         <th>Potential Monthly Energy Cost</th>
-                        <th>Monthly Cost Savings</th>
                         <th>Monthly Energy Consumption Reduction</th>
                     </tr>
                     <!-- Data Rows -->
@@ -37,14 +37,28 @@
                         <td>{{ output.get('actual_consumption_monthly')[key-1] }}kWh</td>
                         <td>${{ output.get('actual_cost_monthly')[key-1] }}</td>
                         <td>{{ output.get('potential_production_monthly')[key-1] }}kWh</td>
+                        <td>${{ output.get('production_value')[key-1] }}</td>
                         <td>${{ output.get('potential_cost_monthly')[key-1] }}</td>
-                        <td>${{ output.get('savings_monthly')[key-1] }}</td>
                         <td>{{ output.get('cost_reduction_monthly')[key-1] }}%</td>
                     </tr>
                     {% endfor %}
                 </table>
                 </div>
                 <br><a href="{{ output.get('url_data_csv') }}">Download Results Data</a>
+            </div>
+        </div>
+    </div>
+</section>
+<!--  How To  -->
+<section class="page-section bg-secondary" id="thank-you">
+    <div class="container px-4 px-lg-5">
+        <div class="row gx-4 gx-lg-5 justify-content-center">
+            <div class="col-lg-8 text-center">
+                <h2 class="text-white mt-0">Thank You!</h2>
+                <hr class="divider divider-light" />
+                <p class="text-white-75 mb-4">Thanks for taking a little time to check out the Solar Calculator! I built this as a passion project to independently develop and deploy a web app from scratch that could also bring some value to those considering installing&nbsp;solar.</p>
+                <p class="text-white-75 mb-4">Check out the <a href="https://github.com/ryzinn18/SolarCalculator" target="_blank">codebase</a> for this app with a more detailed breakdown of the backend in the README. If you have questions or comments about this tool or the codebase please don't hesitate to<a href="/home#contact">reach&nbsp;out</a>.</p>
+                <p class="text-white-75 mb-4">There are plenty of features in the works currently, such as more detailed analysis metrics that would help users easily understand the value of solar. You can connect with me on <a href="www.linkedin.com/in/ryzinn18" target="_blank">Linkdin</a> where I will post about major updates I make on this&nbsp;project.</p>
             </div>
         </div>
     </div>
