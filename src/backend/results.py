@@ -105,9 +105,9 @@ def create_comparison_graph(
 
     LOGGER.info(f'Creating the {graph_type} comparison graph for uid "{uid}"')
 
-    def _plot_bar(df: DataFrame, label: str, color: str) -> None:
+    def _plot_bar(df: DataFrame, label: str, color: str, top: bool) -> None:
         """Plot a bar-plot and set the label."""
-
+        opacity = 0.5 if top else 1
         # Plot the bar plot
         _ax = ax.bar(
             x=list(MONTHS_MAP.values()),
@@ -116,7 +116,8 @@ def create_comparison_graph(
             color=color,
             label=label,
             edgecolor='white',
-            capstyle='round'
+            capstyle='round',
+            alpha=opacity
         )
         # Display the numbers on the bar-plots
         ax.bar_label(
@@ -128,14 +129,17 @@ def create_comparison_graph(
     # Define color_map for storing colors based on graph type
     color_map = {  # key: [df1-color, df2-color]
         'energy': ['indianred', 'gold'],
-        'cost': ['lightcoral', 'darkolivegreen']
+        'cost': ['red', 'green']
     }
+    # Set fonts as bold
+    plt.title(weight='bold')
+    plt.text(weight='bold')
     # Establish subplot figure.axes
     fig, ax = plt.subplots()
     ax.set_title(label=title)
     # Plot both datasets you are comparing as bar-plots
-    _plot_bar(df=df1, label=label1, color=color_map[graph_type][0])
-    _plot_bar(df=df2, label=label2, color=color_map[graph_type][1])
+    _plot_bar(df=df1, label=label1, color=color_map[graph_type][0], top=False)
+    _plot_bar(df=df2, label=label2, color=color_map[graph_type][1], top=True)
     # Set x and y labels
     ax.set_xlabel(xlabel='Month')
     ax.set_ylabel(ylabel=y_label)
@@ -143,8 +147,9 @@ def create_comparison_graph(
     [item.set_rotation(45) for item in ax.get_xticklabels()]
     # Set background color
     ax.set_facecolor('lightseagreen')
+
     # Set legend
-    legend = ax.legend(fontsize="large")
+    legend = ax.legend(fontsize="large", loc='lower center')
     # legend.get_frame().set_color("xkcd:salmon")
 
     # Tighten layout
@@ -176,19 +181,17 @@ def get_results(input_data: dict, solar_data: dict) -> Results:
 
         return out
 
-    # Calculate Potential Cost, Savings, and Cost Reduction
+    # Calculate Production Value, Potential Cost, Savings, and Cost Reduction
     production_value = _helper_calculate(
         func=lambda a1, a2, a3: round(a1 * a3, 2),
         zipped=zip(solar_data.get('solar_potential_monthly'), range(12)),
         arg3=input_data.get("cost_per_kwh")
     )
-    print(production_value)
     potential_cost_monthly = _helper_calculate(
         func=lambda a1, a2, a3: round((a1 - a2) * a3, 2),
         zipped=zip(input_data.get('consumption_monthly'), solar_data.get('solar_potential_monthly')),
         arg3=input_data.get('cost_per_kwh')
     )
-    print(potential_cost_monthly)
     savings_monthly = _helper_calculate(
         func=lambda a1, a2, a3: round((a1 - a2), 2),
         zipped=zip(input_data.get('cost_monthly'), potential_cost_monthly)
@@ -210,18 +213,18 @@ def get_results(input_data: dict, solar_data: dict) -> Results:
     url_data_csv = post_data_csv_to_s3(data_df=results_df, obj_key=input_data['uid'])
     # Create cost comparison graph
     url_cost_graph = create_comparison_graph(
-        title=f"{input_data.get('name')}'s Actual vs Potential Cost",
+        title="Reported Cost vs Production Value",
         df1=results_df['Cost $'].round(),
         df2=results_df['Potential Value $'].round(),
-        label1='Actual Cost',
-        label2='Potential Cost',
+        label1='Reported Cost',
+        label2='Production Value',
         y_label='Dollars',
         graph_type='cost',
         uid=input_data['uid']
     )
     # Create consumption vs production graph
     url_energy_graph = create_comparison_graph(
-        title=f"{input_data.get('name')}'s Energy Consumption vs Production",
+        title="Energy Consumption vs Potential Production",
         df1=results_df['Consumption kWh'],
         df2=results_df['Potential kWh'],
         label1='Energy Consumption',
@@ -243,6 +246,7 @@ def get_results(input_data: dict, solar_data: dict) -> Results:
         actual_consumption_monthly=input_data['consumption_monthly'],
         actual_cost_monthly=input_data['cost_monthly'],
         potential_production_monthly=solar_data['solar_potential_monthly'],
+        production_value=production_value,
         potential_cost_monthly=potential_cost_monthly,
         savings_monthly=savings_monthly,
         cost_reduction_monthly=cost_reduction_monthly,
