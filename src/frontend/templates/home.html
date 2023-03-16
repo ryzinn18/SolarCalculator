@@ -11,7 +11,7 @@
                     <hr class="divider" />
                 </div>
                 <div class="col-lg-8 align-self-baseline">
-                    <p class="text-white-75 mb-5">Learn how much energy and money you could save with a solar array installed on your&nbsp;home!</p>
+                    <p class="text-white-75 mb-5">Learn how much energy and money you could save with a solar array installed on your&nbsp&nbsp;home!</p>
 <!--                        <a class="btn btn-primary btn-xl" href="#about">Find Out More</a>   // Could have the about section be a separate page and thi be the button to it?-->
                 </div>
             </div>
@@ -25,8 +25,8 @@
                     <h2 class="text-white mt-0">How To Use The Solar Calculator</h2>
                     <hr class="divider divider-light" />
                     <p class="text-white-75 mb-4">Using The Solar Calculator is simple! All you need is your energy consumption & cost over the past year. You can acquire this easily from your utility company online or over the phone. Once you have this, enter your consumption info and address into the section below and hit the Run&nbsp;Tool&nbsp;button.</p>
-                    <p class="text-white-75 mb-4"><b><u>Note:</u></b> that you do not need to use your personal address. You can use just your zip code or a nearby address, such as your local library.</p>
-                    <p class="text-white-75 mb-4"><b><u>Note:</u></b> energy consumption must be entered in kiloWattHours (kWh) per month. Your utility company will likely provide your consumption in this metric.</p>
+                    <p class="text-white-75 mb-4"><b><u>Note:</u></b> that you do not need to use your personal address. You can use just your zip code or a nearby address, such as your local&nbsp;library.</p>
+                    <p class="text-white-75 mb-4"><b><u>Note:</u></b> energy consumption must be entered in kiloWattHours (kWh) per month. Your utility company will likely provide your consumption in this&nbsp;metric.</p>
 <!--                        <p class="text-white-75 mb-4">To learn more about this project, check out our About Us page!</p>-->
                 </div>
             </div>
@@ -39,8 +39,9 @@
                 <div class="col-lg-10 col-xl-8 text-center">
                     <h2 class="mt-0">Run the Tool!</h2>
                     <hr class="divider" />
-                    <p class="text-muted mb-5">Don't have all the necessary info on hand, but still want to try this tool&nbsp;out?<br><br>Toggle the below switch to enter all default values.<br><br>
-                    <label class="switch" >
+                    <p class="text-muted mb-5">Don't have all the necessary info on hand, but still want to try this tool&nbsp;out?<br><br>Toggle the below switch to enter default&nbsp;values.<br><br>
+                    <!-- Toggle Defaults Switch -->
+                    <label class="switch">
                         <input id="fill-out-def-switch" type="checkbox" value="0" onclick=fillOutDefaults()>
                         <span class="slider round"></span>
                     </label>
@@ -123,12 +124,9 @@
                         <input class="form-control" id="email-address" type="email" name="_replyto" placeholder="Enter your email..." /><br>
                         <textarea class="form-control" id="message" name="message" placeholder="Enter your message..." style="height: 10rem" data-sb-validations="required"></textarea><br>
                         <input type="hidden" name="_subject" id="email-subject" value="Solar Calculator Comment">
-
                         <div class="d-grid" >
                             <center><button class="btn btn-primary btn-xl" id="submitButton" type="submit" value="Submit" >Submit</button></center>
-
                         </div>
-
                     </fieldset>
                 </div></center>
                 </form>
