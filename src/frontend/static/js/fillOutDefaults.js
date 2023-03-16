@@ -3,18 +3,27 @@ function fillOutDefaults() {
 
     // Get switch value to know whether to fill out or clear form
     const do_switch = document.getElementById(`fill-out-def-switch`).value
-    // Define array of months for getting monthly ID's
+    // Define arrays for months and default values
     const months = [
-        "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"
+        "January", "February", "March", "April", "May", "June", "July",
+        "August", "September", "October", "November", "December"
+    ];
+    const cost = [
+        155.8, 148.2, 128.4, 140.6, 140.6, 121,
+        133.95, 135.85, 134.9, 133.38, 149.5, 148.2
+    ];
+    const consumption = [
+        820, 780, 679, 740, 720, 730,
+        705, 715, 710, 702, 662, 780
     ];
     if (do_switch == 0) {
         // Fill out main 2 inputs: Name & Address
-        document.getElementById(`name`).value = "Default";
-        document.getElementById(`address`).value = "92024";
+        document.getElementById(`name`).value = "Default Dan";
+        document.getElementById(`address`).value = "93101";
         // Fill out monthly values for Cost & Energy
         for (let i = 0; i < months.length; i++) {
-            document.getElementById(`energy${months[i]}`).value = 150;
-            document.getElementById(`cost${months[i]}`).value = 125;
+            document.getElementById(`energy${months[i]}`).value = consumption[i];
+            document.getElementById(`cost${months[i]}`).value = cost[i];
         }
         document.getElementById(`fill-out-def-switch`).value = "1"
     } else {
