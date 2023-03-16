@@ -7,7 +7,7 @@ from typing import Union, Dict, Any, List, Type, TypeVar
 from os.path import join
 from pathlib import PurePath, Path
 
-from .config import GOOGLE_API_SHEET_ID, AWS_ACCESS_KEY, AWS_SECRET_KEY
+from .config import GOOGLE_API_SHEET_ID, AWS_ACCESS_KEY, AWS_SECRET_KEY, AWS_REGION
 
 basicConfig(
     filename='src/logs/main.log', # When running flask app
@@ -20,7 +20,12 @@ basicConfig(
 
 LOGGER = getLogger(__name__ + '.utils')
 
-DYNAMODB = boto_resource('dynamodb', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_SECRET_KEY)
+DYNAMODB = boto_resource(
+    'dynamodb',
+    aws_access_key_id=AWS_ACCESS_KEY,
+    aws_secret_access_key=AWS_SECRET_KEY,
+    region_name=AWS_REGION
+)
 
 JSON = Union[Dict[str, Any], List[Any], int, str, float, bool, Type[None]]
 ROOT = Path(__file__).parents[1]

@@ -6,11 +6,12 @@ from datetime import datetime as dt
 import json
 
 from ..utils import MONTHS_MAP, DYNAMODB, post_item_to_dynamodb, clean_name, check_http_response
+from ..config import AWS_REGION
 
 views = Blueprint("views", __name__)
 
 DDB_NAME = "solarCalculatorTable-Inputs"
-LAMBDA = boto3.client('lambda')
+LAMBDA = boto3.client('lambda', region_name=AWS_REGION)
 
 
 @views.route("/")
