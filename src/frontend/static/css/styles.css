@@ -7808,7 +7808,7 @@ textarea.form-control-lg {
 }
 
 .bg-primary {
-  --bs-bg-opacity: 1;
+  --bs-bg-opacity: 0.85;
   background-color: rgba(var(--bs-primary-rgb), var(--bs-bg-opacity)) !important;
 }
 
@@ -11493,6 +11493,8 @@ div.card-results{
     padding: 1rem;
     --bs-bg-opacity: 0.5;
     background-color: rgba(var(--bs-light-rgb), var(--bs-bg-opacity)) !important;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 /* The switch - the box around the slider */
@@ -11556,4 +11558,12 @@ input:checked + .slider:before {
 
 .slider.round:before {
   border-radius: 50%;
+}
+
+/* Fix alerts to the top center below navbar */
+div.alert {
+  position: fixed;
+  left: 50%;
+  top: 5rem;
+  transform: translate(-50%, 0);
 }
