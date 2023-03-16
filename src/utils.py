@@ -223,6 +223,7 @@ class Results(BaseModel):
     actual_consumption_monthly: IntListMonthly
     actual_cost_monthly: FloatListMonthly
     potential_production_monthly: IntListMonthly
+    production_value: FloatListMonthly
     potential_cost_monthly: AmbiguousListMonthly
     savings_monthly: FloatListMonthly
     cost_reduction_monthly: IntListMonthly
