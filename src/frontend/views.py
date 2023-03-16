@@ -56,8 +56,10 @@ def run_tool():
     try:
         for month in MONTHS_MAP.values():
             monthly_data[month] = [float(request.form.get(f"energy{month}")), float(request.form.get(f"cost{month}"))]
-    except ValueError as e:
-        flash("You entered an incorrect value! Ensure all your Consumption & Cost values are numbers.", category="error")
+    except ValueError:
+        flash(
+            "You entered an incorrect value! Ensure all your Consumption & Cost values are numbers.", category="error"
+        )
         return redirect(url_for("views.home", user=current_user))
 
     # Call main function to run the tool
@@ -77,9 +79,11 @@ def run_tool():
         Payload=json.dumps(input_item)
     )
     if not check_http_response(response_code=lambda_response["StatusCode"]):
-        print("An error occurred here!")
+        flash(
+            "Something happened while processing your request! Please try again.", category="error"
+        )
+        return redirect(url_for("views.home", user=current_user))
 
     results = json.loads(lambda_response['Payload'].read().decode("utf-8"))
-    print(results['status'])
 
     return render_template("output.html", user=current_user, output=results, months=MONTHS_MAP)
