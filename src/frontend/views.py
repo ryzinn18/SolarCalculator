@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for
+from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import current_user
 import boto3
 
@@ -53,6 +53,13 @@ def run_tool():
     if not check_http_response(response_code=db_response):
         return redirect(url_for("views.home", user=current_user))
 
+    try:
+        for month in MONTHS_MAP.values():
+            monthly_data[month] = [float(request.form.get(f"energy{month}")), float(request.form.get(f"cost{month}"))]
+    except ValueError as e:
+        flash("You entered an incorrect value! Ensure all your Consumption & Cost values are numbers.", category="error")
+        return redirect(url_for("views.home", user=current_user))
+
     # Call main function to run the tool
     input_item = {
         "type": "form",
@@ -60,21 +67,8 @@ def run_tool():
             "uid": uid,
             "name": username,
             "address": address,
-            "mod_kwh": 1,
-            "monthly_data": {
-                "January": [1000, 155.8],
-                "February": [1000, 148.8],
-                "March": [1000, 144.8],
-                "April": [1000, 140.4],
-                "May": [1000, 140.2],
-                "June": [1000, 134.8],
-                "July": [1000, 133.2],
-                "August": [1000, 135.8],
-                "September": [1000, 134.4],
-                "October": [1000, 133.4],
-                "November": [1000, 142.8],
-                "December": [1000, 148.8]
-            }
+            "mod_kwh": mod_kwh,
+            "monthly_data": monthly_data
         }
     }
     lambda_response = LAMBDA.invoke(
