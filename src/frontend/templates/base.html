@@ -30,13 +30,31 @@
                     <ul class="navbar-nav ms-auto my-2 my-lg-0">
                         <li class="nav-item"><a class="nav-link" href="#howto">How To</a></li>
 <!--                        <li class="nav-item"><a class="nav-link" href="#portfolio">Portfolio</a></li>-->
-                        <li class="nav-item"><a class="nav-link" href="#runtool">Run Tool</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/home#runtool">Run Tool</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/home#contact">Contact</a></li>
                         <li class="nav-item"><a class="nav-link" href="https://github.com/ryzinn18/SolarCalculator" target="_blank">Codebase</a></li>
                     </ul>
                 </div>
             </div>
         </nav>
+        <!-- Display flash messages -->
+        {% with messages = get_flashed_messages(with_categories=True) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    {% if category == "error" %}
+                    <div class="alert alert-danger alert-dismissible fade show" style="padding-top: 1rem" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
         <!-- Where page's inherited content goes -->
         {% block content %}{% endblock %}
