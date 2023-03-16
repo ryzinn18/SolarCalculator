@@ -89,10 +89,10 @@
                             <tr>
                                 <td><center>{{ month }}:</center></td>
                                 <td>
-                                    <input class="form-control" type="text" name="energy{{ month }}" id="energy{{ month }}" placeholder="kWh"/>
+                                    <input class="form-control" type="text" name="energy{{ month }}" id="energy{{ month }}" placeholder="kWh" required/>
                                 </td>
                                 <td>
-                                    <input class="form-control" type="text" name="cost{{ month }}" id="cost{{ month }}" placeholder="$"/>
+                                    <input class="form-control" type="text" name="cost{{ month }}" id="cost{{ month }}" placeholder="$" required/>
                                 </td>
                             </tr>
                             {% endfor %}
