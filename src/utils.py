@@ -7,11 +7,11 @@ from typing import Union, Dict, Any, List, Type, TypeVar
 from os.path import join
 from pathlib import PurePath, Path
 
-from .config import GOOGLE_API_SHEET_ID, AWS_ACCESS_KEY, AWS_SECRET_KEY, AWS_REGION
+from .config import GOOGLE_API_SHEET_ID, AWS_ACCESS_KEY, AWS_SECRET_KEY
 
 basicConfig(
-    filename='src/logs/main.log', # When running flask app
-    # filename='logs/main.log',
+    # filename='src/logs/main.log', # When running flask app
+    filename='logs/main.log',
     level=INFO,
     format='%(levelname)s:%(filename)s:%(asctime)s:%(funcName)s(): %(message)s',
     datefmt='%Y/%m/%d-%H.%M.%S',
@@ -24,7 +24,7 @@ DYNAMODB = boto_resource(
     'dynamodb',
     aws_access_key_id=AWS_ACCESS_KEY,
     aws_secret_access_key=AWS_SECRET_KEY,
-    region_name=AWS_REGION
+    region_name='us-west-1'
 )
 
 JSON = Union[Dict[str, Any], List[Any], int, str, float, bool, Type[None]]
