@@ -11,14 +11,14 @@
                 <hr class="divider"/>
                 <!-- Graph 1: Actual vs Potential Cost -->
                 <h2 class="text-white">Reported vs Potential Cost</h2>
-                <img src="{{ output.get('url_graph_cost') }}">
+                <img style="width: inherit" src="{{ output.get('url_graph_cost') }}">
                 <!-- Graph 2: Actual vs Potential Energy -->
                 <h2 class="text-white">Reported vs Potential Energy</h2>
-                <img src="{{ output.get('url_graph_energy') }}">
+                <img style="width: inherit" src="{{ output.get('url_graph_energy') }}">
                 <hr class="divider"/>
                 <!-- Table: Results Data -->
                 <h2 class="text-white">All Results</h2><br>
-                <div class="card card-results bg-light" style="width: 700px">
+		<div class="card card-results bg-light" style="width: 700px">
                 <table>
                     <!-- Header Row -->
                     <tr>
@@ -43,7 +43,7 @@
                     </tr>
                     {% endfor %}
                 </table>
-                </div>
+	        </div>
                 <br><a href="{{ output.get('url_data_csv') }}">Download Results Data</a>
             </div>
         </div>
