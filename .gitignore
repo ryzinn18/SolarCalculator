@@ -139,3 +139,5 @@ src/samples/event_inputs/input_xlsx.json
 src/samples/event_inputs/input_sheet.json
 .archive/
 deploy/
+InputTemplates
+*/logs/*
