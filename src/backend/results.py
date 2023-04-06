@@ -159,7 +159,7 @@ def create_comparison_graph(
     bucket_name = f"sc-outputs-graph-{graph_type}"
     url = post_obj_to_s3(
         bucket_name=bucket_name,
-        obj_key='test' + uid,
+        obj_key=uid,
         content_type='image/png'
     )
 
