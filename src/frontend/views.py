@@ -21,6 +21,13 @@ def home():
     return render_template("home.html", user=current_user, months=MONTHS_MAP.values())
 
 
+@views.route("/documentation")
+def documentation():
+    """Documentation view."""
+
+    return render_template("docs.html", user=current_user)
+
+
 @views.route("/run-tool", methods=["GET", "POST"])
 def run_tool():
     """Run the Solar Calculator tool."""
