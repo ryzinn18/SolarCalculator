@@ -7,7 +7,7 @@ from typing import Union, Dict, Any, List, Type, TypeVar
 from os.path import join
 from pathlib import PurePath, Path
 
-from .config import GOOGLE_API_SHEET_ID, AWS_ACCESS_KEY, AWS_SECRET_KEY
+from src.config import GOOGLE_API_SHEET_ID, AWS_ACCESS_KEY, AWS_SECRET_KEY
 
 basicConfig(
     # filename='src/logs/main.log', # When running flask app
