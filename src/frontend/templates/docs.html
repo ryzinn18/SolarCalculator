@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Documentation{% endblock %}
+{% block content %}
+<!-- Output -->
+<section class="docs">
+    <div class="container px-4 px-lg-5 h-100">
+        <div class="row gx-4 gx-lg-5 h-100 align-items-center justify-content-center text-center">
+            <div class="col-lg-5 align-self-end">
+                <!-- Title Header -->
+                <h1 class="text-white font-weight-bold">Documentation</h1>
+                <hr class="divider"/>
+                    <p class="text-white-75 mb-5">Learn about the processes and design principles that went into the Solar&nbsp;Calculator.</p>
+<!--                <h2 class="text-white">Sections</h2><br>-->
+                    <h3><a href="/documentation#mission">Mission</a></h3>
+                    <h3><a href="/documentation#business-logic">Business Logic</a></h3>
+                    <h3><a href="/documentation#design">Design</a></h3>
+                    <h3><a href="/documentation#stack">Tech Stack</a></h3>
+                    <h3><a href="/documentation#sources">Sources</a></h3>
+            </div>
+        </div>
+    </div>
+</section>
+<!--  Mission  -->
+<section class="page-section bg-secondary" id="mission">
+    <div class="container px-4 px-lg-5">
+        <div class="row gx-4 gx-lg-5">
+            <div class="col-lg-8 ">
+                <h2 class="text-white mt-0">Mission</h2>
+                <p class="text-white-75 mb-4">The Solar Calculator was developed by myself, Ryan Zinniger, as both a passion project and means of showcasing and developing software skills. Renewable energy is an industry and movement I have been passionate about since college and when it came time to develop a portfolio project I knew it had to have a renewable energy&nbsp;theme.</p>
+                <p class="text-white-75 mb-4">The purpose of this tool is to show users how much energy and money they could save with a solar array installed at their residence. As we see mass adoption of solar and other renewable energy sources, we also see many tools that help encourage that adoption. This is my contribution to that&nbsp;movement.</p>
+                <p class="text-white-75 mb-4">I acknowledge that there are similar tools that do more than this one, but that was not the point of this tool. The point of this tool was to develop a personal project and give it a theme that I knew would drive me. The drive for this project comes from my love for renewable energy and my desire to contribute to that industry in any way I&nbsp;can.</p>
+            </div>
+        </div>
+    </div>
+</section>
+<!--  Processes & Calculations  -->
+<section class="page-section bg-primary" id="business-logic">
+    <div class="container px-4 px-lg-5">
+        <div class="row gx-4 gx-lg-5 justify-content-end">
+            <div class="col-lg-8" style="text-align: right">
+                <h2 class="text-white mt-0">Business Logic</h2>
+                <p class="text-white-75 mb-4">The Solar Calculator has 3 main tiers to it's processing that make up it's business logic layer: <b>Input&nbsp;Validation</b>, <b>Retrieving&nbsp;Solar&nbsp;Data</b>, and <b>Generating&nbsp;Results</b>.</p>
+                <p class="text-white-75 mb-4"><b>Input&nbsp;Validation</b>: This step is the simplest and is handled upon the user submitting their information. Currently, users only have the option to use the form provided on the home page. However, there is prebuilt infrastructure in inputs.py that would allow users to upload .csv and .xslx files or use a Google Sheet to input and validate their data. At the time this is being written, that capability is being integrated into the frontend and can be expected soon.</p>
+                <p class="text-white-75 mb-4"><b>Retrieving&nbsp;Solar&nbsp;Data</b>: This step is also relatively straight forward. The address provided by the user is passed to solar_potential.py and used to retrieve the solar iridescence data. The size of the solar array necessary is dependent on the amount of energy the user consumes. To calculate the necessary capacity of the array in kWh we first get a normalized amount of energy produced at the user's location by calling on the National Renewable Energy Laboratory (NREL) API and set our array's capacity to 1. Next, we take the user's total reported energy consumption and divide it by the normalized solar iridescence - this tells us the size of the array we need in kWh. Finally, we call on the NREL API again using the size of the array as the capacity. This returns the solar potential we could be producing per month.</p>
+                <p class="text-white-75 mb-4"><b>Generating&nbsp;Results</b>: This step is the most intensive in terms of calculations and object generation. For this, we pass the validated input data and the solar potential data retrieved in the previous 2 steps to results.py. First, we calculate the production value, potential cost, savings, and cost reduction for the user and store that data in a data frame. Next we generate our graphs using this data.</p>
+                <p class="text-white-75 mb-4">Once these steps are complete, the necessary data is passed to the fronend and the output is displayed to the user.</p>
+            </div>
+        </div>
+    </div>
+</section>
+<!--  Design  -->
+<section class="page-section bg-secondary" id="design">
+    <div class="container px-4 px-lg-5">
+        <div class="row gx-4 gx-lg-5">
+            <div class="col-lg-8 ">
+                <h2 class="text-white mt-0">Design</h2>
+                <p class="text-white-75 mb-4">The </p>
+                <p class="text-white-75 mb-4"></p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
