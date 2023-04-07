@@ -27,5 +27,5 @@ The Solar Calculator follows a 3 tier layered architecture. These layers are the
     The overall process sees data moving down the hierarchy of layers then back up to serve the user with their results. In some cases, the Database layer and Presentation layer skip over the Business/Persistence layer for more direct data storage/serving, making the Business/Persistence layer an Open layer. The two cases it does this is seen when the Presentation layer logs the input data before invoking the Business/Persistence layer. The second case is seen when the application presents the results data; the application's frontend receives the graph objects directly from the database layers, rather than having to buffer the images through the Business/Persistence layer. These design choices were made for the sake of data integrity, in the case of the input data being logged initially, and for efficiency, with respect to the images being served from their S3 buckets directly.
 </p>
 <p class="text-white-75 mb-4">
-    <a class="link-secondary" href="https://github.com/ryzinn18/SolarCalculator" target="_blank">Here</a> is a link to this project's GitHub repository.
+    <a class="link-secondary" href="https://github.com/ryzinn18/SolarCalculator" target="_blank">Here<i class="fa-solid fa-square-up-right"></i></a> is a link to this project's GitHub repository.
 </p>
