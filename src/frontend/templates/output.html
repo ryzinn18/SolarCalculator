@@ -18,33 +18,30 @@
                 <hr class="divider"/>
                 <!-- Table: Results Data -->
                 <h2 class="text-white">All Results</h2><br>
-
-<!--<div class="card card-results bg-light">-->
-                    <table style="border: 1px; border-radius: 5px; display: block; max-width: -moz-fit-content; max-width: fit-content; margin: 0 auto; overflow-x: auto;" bgcolor="white">
-                            <!-- Header Row -->
-                            <tr style="border-bottom:2px solid gray;">
-                                <th style="background-color: #f2f2f2;">Month</th>
-                                <th>Reported Monthly Energy Consumption</th>
-                                <th style="background-color: #f2f2f2;">Reported Monthly Energy Cost</th>
-                                <th>Potential Monthly Energy Production</th>
-                                <th style="background-color: #f2f2f2;">Potential Monthly Energy Value</th>
-                                <th>Potential Monthly Energy Cost</th>
-                                <th style="background-color: #f2f2f2;">Monthly Energy Consumption Reduction</th>
-                            </tr>
-                            <!-- Data Rows -->
-                            {% for key in months %}
-                            <tr>
-                                <td style="background-color: #f2f2f2;"><b>{{ months[key] }}</b></td>
-                                <td>{{ output.get('actual_consumption_monthly')[key-1] }}kWh</td>
-                                <td style="background-color: #f2f2f2;">${{ output.get('actual_cost_monthly')[key-1] }}</td>
-                                <td>{{ output.get('potential_production_monthly')[key-1] }}kWh</td>
-                                <td style="background-color: #f2f2f2;">${{ output.get('production_value')[key-1] }}</td>
-                                <td>${{ output.get('potential_cost_monthly')[key-1] }}</td>
-                                <td style="background-color: #f2f2f2;">{{ output.get('cost_reduction_monthly')[key-1] }}%</td>
-                            </tr>
-                            {% endfor %}
-
-                    </table>
+                <table style="border: 1px; border-radius: 5px; display: block; max-width: -moz-fit-content; max-width: fit-content; margin: 0 auto; overflow-x: auto;" bgcolor="white">
+                        <!-- Header Row -->
+                        <tr style="border-bottom:2px solid gray;">
+                            <th style="background-color: #f2f2f2;">Month</th>
+                            <th>Reported Monthly Energy Consumption</th>
+                            <th style="background-color: #f2f2f2;">Reported Monthly Energy Cost</th>
+                            <th>Potential Monthly Energy Production</th>
+                            <th style="background-color: #f2f2f2;">Potential Monthly Energy Value</th>
+                            <th>Potential Monthly Energy Cost</th>
+                            <th style="background-color: #f2f2f2;">Monthly Energy Consumption Reduction</th>
+                        </tr>
+                        <!-- Data Rows -->
+                        {% for key in months %}
+                        <tr>
+                            <td style="background-color: #f2f2f2;"><b>{{ months[key] }}</b></td>
+                            <td>{{ output.get('actual_consumption_monthly')[key-1] }}kWh</td>
+                            <td style="background-color: #f2f2f2;">${{ output.get('actual_cost_monthly')[key-1] }}</td>
+                            <td>{{ output.get('potential_production_monthly')[key-1] }}kWh</td>
+                            <td style="background-color: #f2f2f2;">${{ output.get('production_value')[key-1] }}</td>
+                            <td>${{ output.get('potential_cost_monthly')[key-1] }}</td>
+                            <td style="background-color: #f2f2f2;">{{ output.get('cost_reduction_monthly')[key-1] }}%</td>
+                        </tr>
+                        {% endfor %}
+                </table>
                 <br><a href="{{ output.get('url_data_csv') }}">Download Results<i class="fa-solid fa-circle-down"></i></a>
             </div>
         </div>
