@@ -88,17 +88,17 @@
                             <tr>
                                 <td><center>{{ month }}:</center></td>
                                 <td>
-                                    <input class="form-control" type="text" name="energy{{ month }}" id="energy{{ month }}" placeholder="kWh" required/>
+                                    <input class="form-control" type="text" name="energy{{ month }}" id="energy{{ month }}" placeholder="kWh" />
                                 </td>
                                 <td>
-                                    <input class="form-control" type="text" name="cost{{ month }}" id="cost{{ month }}" placeholder="$" required/>
+                                    <input class="form-control" type="text" name="cost{{ month }}" id="cost{{ month }}" placeholder="$" />
                                 </td>
                             </tr>
                             {% endfor %}
                         </table></center>
                         <br>
                         <div class="d-grid" >
-                            <center><button class="btn btn-primary btn-xl" id="input-data-button" type="submit" >Run Tool</button></center>
+                            <center><button class="btn btn-primary btn-xl" id="input-data-button" type="submit"  onclick="showLoader()">Run Tool</button></center>
                         </div>
                     </fieldset>
                 </form>
@@ -124,7 +124,7 @@
                         <textarea class="form-control" id="message" name="message" placeholder="Enter your message..." style="height: 10rem" data-sb-validations="required"></textarea><br>
                         <input type="hidden" name="_subject" id="email-subject" value="Solar Calculator Comment">
                         <div class="d-grid" >
-                            <center><button class="btn btn-primary btn-xl" id="submitButton" type="submit" value="Submit" >Submit</button></center>
+                            <center><button class="btn btn-primary btn-xl" id="submitButton" type="submit" value="Submit">Submit</button></center>
                         </div>
                     </fieldset>
                 </div></center>
