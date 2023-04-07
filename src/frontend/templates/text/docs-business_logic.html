@@ -1,0 +1,29 @@
+<p class="text-white-75 mb-4">
+The Solar Calculator has 3 key modules to its processing which make up its business logic layer: Input Validation, Retrieving Solar Data, and Generating Results. Each module is linked at the beginning of each respective paragraph below.
+</p>
+<h4 class="text-white mt-0">
+    <a class="link-primary" href="https://github.com/ryzinn18/SolarCalculator/blob/main/src/backend/inputs.py" target="_blank">
+        Input Validation
+    </a>
+</h4>
+<p class="text-white-75 mb-4">
+    This step is handled upon the user submitting their information. Currently, users only have the option to use the form provided on the home page. However, there is prebuilt infrastructure in this module that would allow users to upload .csv or .xslx files, or use a Google Sheet to input and validate their data. At the time this is being written, that capability is being integrated into the frontend and can be expected soon. Upon validating the input data, this module also calculates the average cost per kWh that the user paid.
+</p>
+<h4 class="text-white mt-0">
+    <a class="link-primary" href="https://github.com/ryzinn18/SolarCalculator/blob/main/src/backend/solar_potential.py" target="_blank">
+        Retrieving Solar Data
+    </a>
+</h4>
+<p class="text-white-75 mb-4">
+    The address provided by the user is key to retrieving the necessary solar iridescence data. First, the size of the solar array must be computed. To calculate the necessary capacity of the array in kWh we first get a normalized amount of energy produced at the user's location by calling on the National Renewable Energy Laboratory (NREL) API and set our array's capacity to 1. Next, we take the user's annual reported energy consumption and divide it by the normalized solar iridescence - this tells us the size of the array we need in kWh. Finally, we call on the NREL API again using the size of the array as the capacity. This returns the solar potential we could be producing per month.
+</p>
+<h4 class="text-white mt-0">
+    <a class="link-primary" href="https://github.com/ryzinn18/SolarCalculator/blob/main/src/backend/results.py" target="_blank">
+        Generating Results
+    </a>
+</h4>
+<p class="text-white-75 mb-4">
+    This step is the most intensive in terms of calculations and object generation. For this, we pass the validated input data and the solar potential data retrieved in the previous 2 steps to this step’s handler. First, we calculate the monthly production value, potential cost, savings, and cost reduction for the user and store that data in a data frame. Next we generate our graphs using this data.
+<br><br>
+    Once these steps are complete, the necessary data is passed to the frontend and the output is displayed to the user.
+</p>
