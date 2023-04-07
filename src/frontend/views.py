@@ -58,6 +58,9 @@ def run_tool():
     }
     db_response = post_item_to_dynamodb(DYNAMODB.Table(DDB_NAME), item=table_item)
     if not check_http_response(response_code=db_response):
+        flash(
+            "Something happened while processing your request! Please try again.", category="error"
+        )
         return redirect(url_for("views.home", user=current_user))
 
     try:
@@ -65,7 +68,9 @@ def run_tool():
             monthly_data[month] = [float(request.form.get(f"energy{month}")), float(request.form.get(f"cost{month}"))]
     except ValueError:
         flash(
-            "You entered an incorrect value! Ensure all your Consumption & Cost values are numbers.", category="error"
+            "You entered an incorrect or empty value! Ensure all your Consumption & Cost values are numbers and not "
+            "null.",
+            category="error"
         )
         return redirect(url_for("views.home", user=current_user))
 
