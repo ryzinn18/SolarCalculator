@@ -38,14 +38,17 @@
                 <div class="col-lg-10 col-xl-8 text-center">
                     <h2 class="mt-0">Run the Tool!</h2>
                     <hr class="divider" />
-                    <p class="text-muted mb-5">Don't have all the necessary info on hand, but still want to try this tool&nbsp;out?<br><br>Toggle the below switch to enter default&nbsp;values.<br><br>
+                    <p class="text-muted">
+                        Don't have all the necessary info on hand, but still want to try this tool&nbsp;out?
+                        <br><br>
+                        Toggle the below switch to enter default&nbsp;values.
+                    </p>
                     <!-- Toggle Defaults Switch -->
                     <label class="switch">
                         <input id="fill-out-def-switch" type="checkbox" value="0" onclick=fillOutDefaults()>
                         <span class="slider round"></span>
                     </label>
                     <hr class="divider" />
-                    </p>
                 </div>
             </div>
             <div class="row gx-4 gx-lg-5 justify-content-center">
@@ -69,13 +72,21 @@
                             </tr>
                             <!--Mod kWh Row-->
                             <tr>
-                                <td><b>Solar Module kWh Rating*: </b></td>
+                                <td><b>Solar Module kWh Rating<a data-bs-toggle="collapse" href="#rating">*</a>: </b></td>
                                 <td>
                                     <input class="form-control" type="text" name="mod_kwh" id="mod_kwh" value="0.4"/>
                                 </td>
                             </tr>
                         </table>
-                        <br>
+                            <div id="rating" class="col-lg-8 collapse">
+                                <p style="padding-top: 1rem">
+                                    *This is the capacity of a single solar module in your potential solar array. The
+                                    default value comes from the average residential module rating being
+                                    0.4 kWh. Note that the higher the rating, the less modules you will need
+                                    to&nbsp;purchase!
+                                </p>
+                            </div>
+                            <br>
                         <table>
                             <!--Header Row-->
                             <tr>
@@ -95,7 +106,8 @@
                                 </td>
                             </tr>
                             {% endfor %}
-                        </table></center>
+                        </table>
+                        </center>
                         <br>
                         <div class="d-grid" >
                             <center><button class="btn btn-primary btn-xl" id="input-data-button" type="submit"  onclick="showLoader()">Run Tool</button></center>
