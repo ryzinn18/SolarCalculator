@@ -141,3 +141,4 @@ src/samples/event_inputs/input_sheet.json
 deploy/
 InputTemplates
 */logs/*
+.DS_Store
