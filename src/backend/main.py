@@ -1,12 +1,21 @@
 # # SolarCalculator/src/main.py
 # This is the main module for running this program.
-from logging import getLogger
+from logging import getLogger, basicConfig, ERROR
 
 from utils import check_http_response
 
 from inputs import input_handler
 from solar_potential import solar_potential_handler
 from results import results_handler
+
+basicConfig(
+    # filename='src/logs/main.log', # When running flask app
+    filename='logs/main.log',
+    level=ERROR,
+    format='%(levelname)s:%(filename)s:%(asctime)s:%(funcName)s(): %(message)s',
+    datefmt='%Y/%m/%d-%H.%M.%S',
+    filemode='w',
+)
 
 LOGGER = getLogger(__name__)
 
@@ -53,7 +62,7 @@ def main_handler(event: dict, context) -> dict:
 if __name__ == '__main__':
     from utils import import_json, SAMPLES
 
-    OUT = main_handler(event=import_json(SAMPLES['event_valid_form']))
+    OUT = main_handler(event=import_json(SAMPLES['event_valid_form']), context=None)
 
     print("STATUS_CODE: ", OUT['status']['status_code'])
     print("MOD_QUANTITY: ", OUT['mod_quantity'])
