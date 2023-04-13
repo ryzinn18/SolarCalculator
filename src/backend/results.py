@@ -15,11 +15,11 @@ import io
 from datetime import datetime as dt
 
 from utils import Results, MONTHS_MAP, IntListMonthly, FloatListMonthly, Status, check_http_response
-from config import AWS_ACCESS_KEY, AWS_SECRET_KEY, DYNAMODB_TABLE_NAME
+from config import DYNAMODB_TABLE_NAME
 
 LOGGER = getLogger(__name__)
-S3 = boto_resource('s3', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_SECRET_KEY)
-DYNAMODB = boto_resource('dynamodb', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_SECRET_KEY)
+S3 = boto_resource('s3')
+DYNAMODB = boto_resource('dynamodb')
 
 
 class S3Url:
@@ -132,8 +132,8 @@ def create_comparison_graph(
         'cost': ['red', 'green']
     }
     # Set fonts as bold
-    plt.title(weight='bold')
-    plt.text(weight='bold')
+    plt.title(label=title, weight='bold')
+    plt.text(x=None, y=None, s=None, weight='bold')
     # Establish subplot figure.axes
     fig, ax = plt.subplots()
     ax.set_title(label=title)
@@ -309,7 +309,7 @@ def results_handler(input_data: dict, solar_data: dict) -> dict:
 
 def DEPRECATED_create_out_csv(header: dict, data_df: DataFrame, footer: dict, out_path: Union[PathLike, str]) -> None:
     """
-    DEPRECATED: Could still be used at some point to allow users to download a csv all data so saving for now.
+    DEPRECATED: Could still be used at some point to allow users to download a csv all data.
     Create the output csv at the path passed.
     """
     """Original Call:
