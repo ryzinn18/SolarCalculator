@@ -6,7 +6,7 @@ from typing import Union, Dict, Any, List, Type, TypeVar
 from os.path import join
 from pathlib import PurePath, Path
 
-from config import GOOGLE_API_SHEET_ID
+# from config import GOOGLE_API_SHEET_ID
 
 
 DYNAMODB = boto_resource('dynamodb')
@@ -15,7 +15,7 @@ JSON = Union[Dict[str, Any], List[Any], int, str, float, bool, Type[None]]
 ROOT = Path(__file__).parents[1]
 
 SAMPLES = {
-    'sheet': GOOGLE_API_SHEET_ID,
+    # 'sheet': GOOGLE_API_SHEET_ID,
 
     'csv_valid': join(ROOT, 'src/samples/consumption_valid.csv'),
     'csv_invalid': join(ROOT, 'src/samples/consumption_invalid.csv'),
