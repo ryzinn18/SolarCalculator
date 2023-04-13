@@ -132,6 +132,7 @@ dmypy.json
 OutputDataFiles/
 OutputGraphs/
 */config.py
+src/backend/config.py
 src/.creds/
 src/backend/logs/
 src/samples/event_outputs/input_csv.json

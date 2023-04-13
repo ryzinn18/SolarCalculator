@@ -11,9 +11,6 @@
 NREL_API_KEY = ''
 
 # REQUIRED: AWS Access and Secret Keys along with the region and table name you are using
-AWS_ACCESS_KEY = ''
-AWS_SECRET_KEY = ''
-AWS_REGION = ''
 DYNAMODB_TABLE_NAME = ''
 
 # OPTIONAL: You need to sign up for a Google sheets API key.

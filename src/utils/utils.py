@@ -2,30 +2,14 @@
 from pydantic import BaseModel, conlist, conint, PositiveInt, PositiveFloat
 from boto3 import resource as boto_resource
 
-from logging import getLogger, basicConfig, INFO
 from typing import Union, Dict, Any, List, Type, TypeVar
 from os.path import join
 from pathlib import PurePath, Path
 
-from src.config import GOOGLE_API_SHEET_ID, AWS_ACCESS_KEY, AWS_SECRET_KEY
+from config import GOOGLE_API_SHEET_ID
 
-basicConfig(
-    # filename='src/logs/main.log', # When running flask app
-    filename='logs/main.log',
-    level=INFO,
-    format='%(levelname)s:%(filename)s:%(asctime)s:%(funcName)s(): %(message)s',
-    datefmt='%Y/%m/%d-%H.%M.%S',
-    filemode='w',
-)
 
-LOGGER = getLogger(__name__ + '.utils')
-
-DYNAMODB = boto_resource(
-    'dynamodb',
-    aws_access_key_id=AWS_ACCESS_KEY,
-    aws_secret_access_key=AWS_SECRET_KEY,
-    region_name='us-west-1'
-)
+DYNAMODB = boto_resource('dynamodb')
 
 JSON = Union[Dict[str, Any], List[Any], int, str, float, bool, Type[None]]
 ROOT = Path(__file__).parents[1]
@@ -42,7 +26,7 @@ SAMPLES = {
     'input_invalid_type': join(ROOT, 'src/samples/input_invalid_type.json'),
     'input_invalid_value': join(ROOT, 'src/samples/input_invalid_value.json'),
 
-    'event_valid_form': join(ROOT, 'src/samples/event_inputs/input_form.json'),
+    'event_valid_form': join(ROOT, 'samples/event_inputs/input_form.json'),
     'event_valid_csv': join(ROOT, 'src/samples/event_outputs/input_csv.json'),
     'event_valid_xlsx': join(ROOT, 'src/samples/event_inputs/input_xlsx.json'),
     'event_valid_sheet': join(ROOT, 'src/samples/event_inputs/input_sheet.json'),
@@ -113,17 +97,13 @@ def import_json(path: str) -> dict:
     from os.path import isfile
     from json import load as j_load
 
-    LOGGER.info(f'Attempting to import the following json: {path}')
-
     # Raise OSError if the .json does not exist
     if not isfile(path):
-        # LOGGER.error(f'The json specified at the following path does not exist: {path}')
         raise OSError(
             f'The following path to a file does not exist:\n\t{path}'
         )
     # Raise OSError if the file path passed is not a .json
     if not path.endswith('.json'):
-        # LOGGER.error(f'The path specified is not to a .json file: {path}')
         raise OSError(
             f'The path provided is a file that is not a .json\n\t{path.split(r"/")[-1]}'
         )
@@ -132,7 +112,6 @@ def import_json(path: str) -> dict:
     with open(path, 'r') as j:
         obj = j_load(j)
 
-    LOGGER.info(f'The following json file successfully imported: {path}')
     return obj
 
 
@@ -141,15 +120,12 @@ def export_json(j_obj: JSON, target_directory: str, out_name: str) -> None:
 
     from os.path import isdir
 
-    LOGGER.info(f'Attempting to export the following object to target_directory: {target_directory}')
-    LOGGER.info(j_obj)
-
     # Clean up variables passed
     target_directory = target_directory.rstrip(r'/')
     out_name = out_name.rstrip('.json')
     # Raise OSError if the target_directory does not exist
     if not isdir(target_directory):
-        LOGGER.error(f'The target directory specified does not exist: {target_directory}')
+        # LOGGER.error(f'The target directory specified does not exist: {target_directory}')
         raise OSError(
             f'The following target_directory does not exist:\n\t{target_directory}'
         )
@@ -166,7 +142,6 @@ def delete_s3_obj(bucket_name: str, obj_key: str) -> int:
     """Delete an s3 object given bucket name and object's key and return the http response code."""
 
     from boto3 import resource as boto_resource
-    from config import AWS_ACCESS_KEY, AWS_SECRET_KEY
 
     s3 = boto_resource('s3', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_SECRET_KEY)
 

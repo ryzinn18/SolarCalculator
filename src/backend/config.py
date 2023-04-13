@@ -1,1 +1,1 @@
-../config.py
+../utils/config.py
