@@ -131,7 +131,7 @@ dmypy.json
 # .gitignore
 OutputDataFiles/
 OutputGraphs/
-src/config.py
+*/config.py
 src/.creds/
 src/backend/logs/
 src/samples/event_outputs/input_csv.json
@@ -142,3 +142,4 @@ deploy/
 InputTemplates
 */logs/*
 .DS_Store
+*/.DS_Store/*
