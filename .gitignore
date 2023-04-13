@@ -139,7 +139,6 @@ src/samples/event_outputs/input_csv.json
 src/samples/event_inputs/input_xlsx.json
 src/samples/event_inputs/input_sheet.json
 .archive/
-deploy/
 InputTemplates
 */logs/*
 .DS_Store
