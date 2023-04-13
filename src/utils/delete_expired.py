@@ -73,18 +73,18 @@ def cleanup_handler(event: dict, context):
 
     if not failed_deletions:
         return {
-            "failed_deletions": failed_deletions,
             "status": Status(
                 status_code=200,
                 message="All expired items were deleted."
-            )
+            ).dict()
         }
     else:
         return {
+            "failed_deletions": failed_deletions,
             "status": Status(
                 status_code=206,
                 message="Not all expired items were deleted."
-            )
+            ).dict()
         }
 
 
