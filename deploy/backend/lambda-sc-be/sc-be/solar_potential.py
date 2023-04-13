@@ -1,1 +1,0 @@
-/Users/ryanwright-zinniger/Desktop/SolarCalculator/src/backend/solar_potential.py
