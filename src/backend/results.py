@@ -95,7 +95,7 @@ def post_item_to_dynamodb(dynamo_table, item: dict) -> int:
 
     return dynamo_table.put_item(
         Item=item
-    )['ResponseMetadata']['HTTPStatusCode']
+    ).get('ResponseMetadata').get('HTTPStatusCode')
 
 
 def create_comparison_graph(
