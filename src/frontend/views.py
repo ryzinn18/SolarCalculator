@@ -5,7 +5,7 @@ import boto3
 from datetime import datetime as dt
 import json
 
-from ..utils import MONTHS_MAP, DYNAMODB, post_item_to_dynamodb, clean_name, check_http_response
+from .utils import MONTHS_MAP, DYNAMODB, post_item_to_dynamodb, clean_name, check_http_response
 
 views = Blueprint("views", __name__)
 
