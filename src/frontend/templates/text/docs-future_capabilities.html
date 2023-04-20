@@ -1,0 +1,42 @@
+<p class="text-white mb-4">
+    Currently, I have several updates in the works for Version&nbsp;2.0.
+</p>
+<p class="text-white mb-4">
+    I will post about all major updates on
+    my <a class="link-secondary" href="www.linkedin.com/in/ryzinn18">LinkedIn<i class="fa-solid fa-square-up-right"></i></a>, connect with me to stay up to date!
+</p>
+
+<h4 class="text-white mt-0">Improved Cost Insights</h4>
+<p class="text-white mb-4">
+    One key insight missing from the results of this tool is estimating of the total investment to have solar
+    installed at your residence. This update wil included results&nbsp;for:
+    <li class="text-white">The total estimated cost for installing solar based on your energy&nbsp;needs.</li>
+    <li class="text-white">A breakdown of the Federal Tax Credit and how it affects your total&nbsp;costs.</li>
+    <li class="text-white">An estimate of how long until your solar array pays for&nbsp;itself.</li>
+</p>
+
+<h4 class="text-white mt-0">Customize Solar Array Size and Module Cost</h4>
+<p class="text-white mb-4">
+    In addition to the new insights discussed above, this update will also allow users more control over their inputs.
+    With respect to the insights regarding total costs, this tool will initially execute it's first 2 steps
+    (Input Validation & Retrieving Solar Data; see <a class="link-secondary" href="#business-logic">Business Logic</a> above) and display the
+    suggested solar array size and estimated solar array cost. It will allow the user to modify these parameters to
+    better fit their needs. For example, in the case that the user wants a larger solar array than suggested, they can
+    modify that parameter before calculating their final results. This functionality will ensure users are getting
+    results that best fit their&nbsp;situation.
+</p>
+
+<h4 class="text-white mt-0">Parallel Processing for Large Tasks</h4>
+<p class="text-white mb-4">
+    Currently, the most resource intensive tasks executed by this application is the generation of the graphs displayed
+    for the results. To improve this, the portion of the program that creates these graphs and writes them to their
+    respective S3 buckets will be abstracted and calls will be made in parallel. This will allow the program to create
+    the 2 (and maybe more to come) graphs and .csv file at the same time using asynchronous Lambda&nbsp;calls.
+</p>
+
+<h4 class="text-white mt-0">Suggestions?</h4>
+<p class="text-white mb-4">
+    After using this tool, are there any features you would like to see added?
+    <a class="link-secondary" href="/#contact">Reach&nbsp;out</a> and let me know! I love any and all feedback you may
+    have to&nbsp;offer.
+</p>
