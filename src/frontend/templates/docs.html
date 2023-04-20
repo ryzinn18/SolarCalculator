@@ -9,12 +9,13 @@
                 <!-- Title Header -->
                 <h1 class="text-white font-weight-bold">Documentation</h1>
                 <hr class="divider"/>
-                    <p class="text-white-75 mb-5">Learn about the processes and design principles that went into the Solar&nbsp;Calculator.</p>
-<!--                <h2 class="text-white">Sections</h2><br>-->
-                    <h3><a href="/documentation#mission">Mission</a></h3>
-                    <h3><a href="/documentation#design-stack">Design & Stack</a></h3>
-                    <h3><a href="/documentation#business-logic">Business Logic</a></h3>
-                    <h3><a href="/documentation#sources">Sources</a></h3>
+                <h3 class="text-white font-weight">Version - 1.0</h3>
+                <p class="text-white-75 mb-5">Learn about the processes and design principles that went into the Solar&nbsp;Calculator.</p>
+                <h3><a href="/documentation#mission">Mission</a></h3>
+                <h3><a href="/documentation#design-stack">Design & Stack</a></h3>
+                <h3><a href="/documentation#business-logic">Business Logic</a></h3>
+                <h3><a href="/documentation#future-capabilities">Future Capabilities</a></h3>
+                <h3><a href="/documentation#sources">Sources</a></h3>
             </div>
         </div>
     </div>
@@ -67,11 +68,27 @@
         </div>
     </div>
 </section>
-<!--  Sources  -->
-<section class="page-section bg-primary" id="sources">
+<!--  Design & Stack -->
+<section class="page-section bg-primary" id="future-capabilities">
     <div class="container px-4 px-lg-5">
         <div class="row gx-4 gx-lg-5 justify-content-end">
-            <div class="col-lg" style="text-align: right">
+            <div class="col-lg-4 align-self-center">
+                <div class="p-5">
+                    <img class="img-fluid rounded-circle" src="../static/assets/img/future_capabilities.jpg" alt="Source: https://www.nrel.gov/news/program/2022/images/20221024-increased-spacing-of-solar-panels-comes-with-benefits-65308.jpg" />
+                </div>
+            </div>
+            <div class="col-lg-8" style="text-align: right">
+                <h2 class="text-white mt-0">Future Capabilities</h2>
+                {% include "text/docs-future_capabilities.html" %}
+            </div>
+        </div>
+    </div>
+</section>
+<!--  Sources  -->
+<section class="page-section bg-secondary" id="sources">
+    <div class="container px-4 px-lg-5">
+        <div class="row gx-4 gx-lg-5">
+            <div class="col-lg-8 order-lg-2 align-self-center">
                 <h2 class="text-white mt-0">Sources</h2>
                 {% include "text/docs-sources.html" %}
             </div>
