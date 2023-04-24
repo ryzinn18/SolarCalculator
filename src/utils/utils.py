@@ -2,7 +2,7 @@
 from pydantic import BaseModel, conlist, conint, PositiveInt, PositiveFloat
 from boto3 import resource as boto_resource
 
-from typing import Union, Dict, Any, List, Type, TypeVar
+from typing import Union, Dict, Any, List, Type, TypeVar, Literal
 from os.path import join
 from pathlib import PurePath, Path
 
@@ -143,7 +143,7 @@ def delete_s3_obj(bucket_name: str, obj_key: str) -> int:
 
     from boto3 import resource as boto_resource
 
-    s3 = boto_resource('s3', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_SECRET_KEY)
+    s3 = boto_resource('s3')
 
     response = s3.Object(bucket_name, obj_key).delete()
     return response['ResponseMetadata']['HTTPStatusCode']
@@ -181,14 +181,13 @@ class SolarPotentialData(BaseModel):
     uid: str
     name: str
     time_stamp: str
+    data_type: Literal['normal', 'actual']
     status: Status
-    address: str
     solar_potential_monthly: IntListMonthly
     solar_potential_annual: PositiveInt
     needed_kwh: PositiveInt
+    mod_quantity: PositiveInt
     # Default
-    note = "Solar potential (kWh) reported over a 30 year average."
-    source = "pvwatts.nrel.gov/pvwatts.php"
     units_solar_potential = "kiloWattHours"
     sym_solar_potential = "kWh"
 
