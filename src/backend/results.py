@@ -3,6 +3,7 @@
 import matplotlib.pyplot as plt
 from pandas import DataFrame
 from boto3 import resource as boto_resource
+from pydantic import PositiveFloat
 
 from csv import writer as csv_writer
 from logging import getLogger
@@ -167,11 +168,10 @@ def create_comparison_graph(
     return url
 
 
-def get_results(input_data: dict, solar_data: dict) -> Results:
-    """Create graphs, calculate savings and mod quantity, and return Results data object."""
-
-    LOGGER.info(f'Generating ResultsData for uid: {input_data.get("uid")}')
-
+def calculate_insights(
+        solar_potential_monthly: IntListMonthly, consumption_monthly: IntListMonthly,
+        cost_per_kwh: PositiveFloat, cost_monthly: FloatListMonthly) -> dict:
+    """"""
     def _helper_calculate(func: Callable, zipped: tuple, arg3=None) -> FloatListMonthly:
         """Helper to clean up calculations for different monthly and annual figures."""
 
@@ -184,33 +184,56 @@ def get_results(input_data: dict, solar_data: dict) -> Results:
     # Calculate Production Value, Potential Cost, Savings, and Cost Reduction
     production_value = _helper_calculate(
         func=lambda a1, a2, a3: round(a1 * a3, 2),
-        zipped=zip(solar_data.get('solar_potential_monthly'), range(12)),
-        arg3=input_data.get("cost_per_kwh")
+        zipped=zip(solar_potential_monthly, range(12)),
+        arg3=cost_per_kwh
     )
     potential_cost_monthly = _helper_calculate(
         func=lambda a1, a2, a3: round((a1 - a2) * a3, 2),
-        zipped=zip(input_data.get('consumption_monthly'), solar_data.get('solar_potential_monthly')),
-        arg3=input_data.get('cost_per_kwh')
+        zipped=zip(consumption_monthly, solar_potential_monthly),
+        arg3=cost_per_kwh
     )
     savings_monthly = _helper_calculate(
         func=lambda a1, a2, a3: round((a1 - a2), 2),
-        zipped=zip(input_data.get('cost_monthly'), potential_cost_monthly)
+        zipped=zip(cost_monthly, potential_cost_monthly)
     )
     cost_reduction_monthly = _helper_calculate(
         func=lambda a1, a2, a3: round(((a1 / a2) * 100), 2),
-        zipped=zip(savings_monthly, input_data.get('cost_monthly'))
+        zipped=zip(savings_monthly, cost_monthly)
     )
+
+    return {
+        'production_value': production_value,
+        'potential_cost_monthly': potential_cost_monthly,
+        'savings_monthly': savings_monthly,
+        'cost_reduction_monthly': cost_reduction_monthly
+    }
+
+
+def get_results(input_data: dict, solar_data: dict) -> Results:
+    """Create graphs, calculate savings and mod quantity, and return Results data object."""
+
+    LOGGER.info(f'Generating ResultsData for uid: {input_data.get("uid")}')
+
+    insights = calculate_insights(
+        solar_potential_monthly=solar_data.get('solar_potential_monthly'),
+        consumption_monthly=input_data.get('consumption_monthly'),
+        cost_per_kwh=input_data.get('cost_per_kwh'),
+        cost_monthly=input_data.get('cost_monthly')
+    )
+
     # Create DataFrame with all data for graphing/writing outputs
     results_df = get_data_df(
         input_data=input_data,
         solar_potential_monthly=solar_data.get('solar_potential_monthly'),
-        potential_cost_monthly=potential_cost_monthly,
-        potential_value=production_value,
-        savings_monthly=savings_monthly,
-        cost_reduction_monthly=cost_reduction_monthly,
+        potential_cost_monthly=insights['potential_cost_monthly'],
+        potential_value=insights['production_value'],
+        savings_monthly=insights['savings_monthly'],
+        cost_reduction_monthly=insights['cost_reduction_monthly'],
     )
     # Create data csv and save to s3 bucket
     url_data_csv = post_data_csv_to_s3(data_df=results_df, obj_key=input_data['uid'])
+
+
     # Create cost comparison graph
     url_cost_graph = create_comparison_graph(
         title="Reported Cost vs Production Value",
@@ -246,11 +269,11 @@ def get_results(input_data: dict, solar_data: dict) -> Results:
         actual_consumption_monthly=input_data['consumption_monthly'],
         actual_cost_monthly=input_data['cost_monthly'],
         potential_production_monthly=solar_data['solar_potential_monthly'],
-        production_value=production_value,
-        potential_cost_monthly=potential_cost_monthly,
-        savings_monthly=savings_monthly,
-        cost_reduction_monthly=cost_reduction_monthly,
-        cost_reduction_average=_average(cost_reduction_monthly),
+        production_value=insights['production_value'],
+        potential_cost_monthly=insights['potential_cost_monthly'],
+        savings_monthly=insights['savings_monthly'],
+        cost_reduction_monthly=insights['cost_reduction_monthly'],
+        cost_reduction_average=_average(insights['cost_reduction_monthly']),
         results_data_json=results_df.to_json(),
         mod_quantity=mod_quantity,
         url_data_csv=url_data_csv,
@@ -307,6 +330,11 @@ def results_handler(input_data: dict, solar_data: dict) -> dict:
     return results_data
 
 
+if __name__ == '__main__':
+    from utils import import_json, SAMPLES
+    print(results_handler(import_json(SAMPLES['event_ready_for_solar']), import_json(SAMPLES['event_ready_for_results'])))
+
+
 def DEPRECATED_create_out_csv(header: dict, data_df: DataFrame, footer: dict, out_path: Union[PathLike, str]) -> None:
     """
     DEPRECATED: Could still be used at some point to allow users to download a csv all data.
@@ -344,8 +372,3 @@ def DEPRECATED_create_out_csv(header: dict, data_df: DataFrame, footer: dict, ou
         _write_dict(to_write=footer)
 
     LOGGER.info(f'Output csv successfully created: {out_path}')
-
-
-if __name__ == '__main__':
-    from utils import import_json, SAMPLES
-    print(results_handler(import_json(SAMPLES['event_ready_for_solar']), import_json(SAMPLES['event_ready_for_results'])).get("status"))
