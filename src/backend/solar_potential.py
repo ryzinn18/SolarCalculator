@@ -7,8 +7,6 @@ from json import JSONDecodeError
 from datetime import datetime as dt
 
 from config import NREL_API_KEY
-from utils import SolarPotentialData, Status
-
 
 LOGGER = getLogger(__name__)
 
@@ -68,81 +66,48 @@ def _get_iridescence_obj(params: dict, nrel_token: str) -> dict:
     raise Exception('After requesting 3 times, the nrel API get request still failed due to a JSONDecodeError.')
 
 
-def get_solar_potential(input_data: dict) -> SolarPotentialData:
-    """
-    Runs through steps to get solar potential data for the address provided:
-    1. Get normalized data:
-        - Get params with capacity == 1 (normalized)
-        - Get iridescence data for normal params
-    2. Calculate needed kWh:
-        - Divide actual annual consumption by normalized annual consumption
-    3. Get solar potential data:
-        - Get params with capacity == needed kWh (actual)
-    4. Validate actual data into SolarPotentialData model.
+def get_solar_potential(input_data: dict) -> dict:
+    """Call NREL's API for solar data related to array location (address) and capacity."""
 
-    :param input_data: Dict (json) object passed to this function containing address and consumption_annual attributes.
-    :return SolarPotentialData model
-    """
+    LOGGER.info(f'get_solar_potential() called for uid: {input_data.get("uid")}')
 
-    LOGGER.info(f'solar_potential_handler() called for given event: {input_data}')
+    # Get data:
+    params = _get_params(capacity=input_data.get('capacity'), address=input_data.get('address'))
+    outputs = _get_iridescence_obj(params=params, nrel_token=NREL_API_KEY).get('outputs')
+    # Organize data:
+    solar_data = {
+        'uid': input_data.get("uid"),
+        'output_monthly': [round(elem) for elem in outputs.get('ac_monthly')],
+        'output_annual': round(float(outputs.get('ac_annual')), 2),
+        'status': {
+            'status_code': 200,
+            'message': "get_solar_potential() called successfully."
+        }
+    }
 
-    # if not input_data.get('uid') or not input_data.get('address') or not input_data.get('consumption_annual'):
-    #     LOGGER.error(f'The event passed to solar_potential_handler() does not have necessary attribute(s).')
-    #     raise KeyError('The event passed to solar_potential_handler() does not have necessary attribute(s).')
+    LOGGER.info(f'get_solar_potential() called successfully for uid: {input_data.get("uid")}')
 
-    address = input_data.get('address')
-    annual_consumption = input_data.get('consumption_annual')
-
-    LOGGER.info(f'Attempting to retrieve the solar potential data for the following address: {address}')
-
-    # 1. Get normalized data:
-    normal_params = _get_params(capacity=1, address=address)
-    normal_outputs = _get_iridescence_obj(params=normal_params, nrel_token=NREL_API_KEY).get('outputs')
-    normal_annual = round(normal_outputs.get('ac_annual'))
-    # 2. Calculate needed kWh:
-    needed_kwh = round(annual_consumption / normal_annual)
-    # 3. Get solar potential data:
-    actual_params = _get_params(capacity=needed_kwh, address=address)
-    actual_obj = _get_iridescence_obj(params=actual_params, nrel_token=NREL_API_KEY)
-    actual_outputs = actual_obj.get('outputs')
-    actual_monthly = actual_outputs.get('ac_monthly')
-    # 4. Validate actual data into SolarPotentialData model.
-    result = SolarPotentialData(
-        uid=input_data.get('uid'),
-        name=input_data.get("name"),
-        time_stamp=dt.now().__str__(),
-        status=Status(status_code=200, message="get_solar_potential() called successfully."),
-        address=address,
-        solar_potential_monthly=[round(elem) for elem in actual_monthly],
-        solar_potential_annual=round(float(actual_outputs.get('ac_annual')), 2),
-        needed_kwh=needed_kwh,
-        input_data=input_data
-    )
-
-    LOGGER.info(f'Solar data retrieved and validated: {result}')
-    return result
+    return solar_data
 
 
-def solar_potential_handler(event: dict) -> dict:
+def solar_potential_handler(event: dict, context) -> dict:
     """Handler for calling get_solar_potential() and returning validated object."""
 
     LOGGER.info(f'Called Handler function for getting solar data event for uid: {event.get("uid")}')
 
     # Handle getting the necessary data
     try:
-        solar_data = get_solar_potential(input_data=event).dict()
-        LOGGER.info(f'Lambda Handler for solar data successfully executed for uid: {event.get("uid")}')
+        solar_data = get_solar_potential(input_data=event)
     except Exception as e:
-        time_stamp = dt.now().__str__()
-        uid = event.get("uid") if event.get("uid") else "NA" + time_stamp
+        uid = event.get("uid") if event.get("uid") else f"NA-{dt.now().__str__().replace(' ', '_').replace(':', '.')}"
         solar_data = {
             "uid": uid,
-            "time_stamp": time_stamp,
-            "status": Status(
-                status_code=400,
-                message=f"get_solar_potential() called unsuccessfully due to error: {e.__repr__()}"
-            )
+            "status": {
+                "status_code": 400,
+                "message": f"get_solar_potential() called unsuccessfully due to error: {e.__repr__()}"
+            }
         }
+        LOGGER.error(f'Lambda Handler for solar data failed for uid: {uid}')
         LOGGER.error(e, exc_info=True)
 
     return solar_data
