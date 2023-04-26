@@ -4,7 +4,7 @@ import boto3
 import json
 from typing import Callable
 
-from utils import post_item_to_dynamodb, DYNAMODB, check_http_response, MONTHS_MAP
+from .utils import post_item_to_dynamodb, DYNAMODB, check_http_response, MONTHS_MAP
 
 
 def validate(function: Callable) -> Callable:
@@ -82,14 +82,14 @@ def suggest_mod_quantity(capacity: int, mod_rating: float) -> int:
     return int(capacity // mod_rating) + 1
 
 
-def get_solar_data(inputs: dict) -> dict:
+def get_solar_data(solar_inputs: dict) -> dict:
     """Call Lambda function sc-be-solar for solar data."""
     lambda_client = boto3.client('lambda')
 
     response = lambda_client.invoke(
         FunctionName='sc-be-solar',
         InvocationType='RequestResponse',
-        Payload=json.dumps(inputs)
+        Payload=json.dumps(solar_inputs)
     )
     if not check_http_response(response_code=response.get('ResponseMetadata').get('HTTPStatusCode')):
         # Log error
