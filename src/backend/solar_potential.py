@@ -73,21 +73,30 @@ def get_solar_potential(input_data: dict) -> dict:
 
     # Get data:
     params = _get_params(capacity=input_data.get('capacity'), address=input_data.get('address'))
-    outputs = _get_iridescence_obj(params=params, nrel_token=NREL_API_KEY).get('outputs')
+    response = _get_iridescence_obj(params=params, nrel_token=NREL_API_KEY)
     # Organize data:
-    solar_data = {
-        'uid': input_data.get("uid"),
-        'output_monthly': [round(elem) for elem in outputs.get('ac_monthly')],
-        'output_annual': round(float(outputs.get('ac_annual')), 2),
-        'status': {
-            'status_code': 200,
-            'message': "get_solar_potential() called successfully."
+    if response.get('errors'):
+        LOGGER.info(f'_get_iridescence_obj() response returned errors for uid: {input_data.get("uid")}')
+        return {
+            'uid': input_data.get("uid"),
+            'errors': response.get('errors'),
+            'status': {
+                'status_code': 422,
+                'message': "_get_iridescence_obj() response returned errors."
+            }
         }
-    }
-
-    LOGGER.info(f'get_solar_potential() called successfully for uid: {input_data.get("uid")}')
-
-    return solar_data
+    else:
+        LOGGER.info(f'get_solar_potential() called successfully for uid: {input_data.get("uid")}')
+        return {
+            'uid': input_data.get("uid"),
+            'output_monthly': [round(elem) for elem in response.get('outputs').get('ac_monthly')],
+            'output_annual': round(float(response.get('outputs').get('ac_annual')), 2),
+            'state': response.get('station_info').get('state'),
+            'status': {
+                'status_code': 200,
+                'message': "_get_iridescence_obj() called successfully."
+            }
+        }
 
 
 def solar_potential_handler(event: dict, context) -> dict:
