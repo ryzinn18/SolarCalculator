@@ -91,12 +91,21 @@ def get_solar_data(solar_inputs: dict) -> dict:
         InvocationType='RequestResponse',
         Payload=json.dumps(solar_inputs)
     )
-    if not check_http_response(response_code=response.get('ResponseMetadata').get('HTTPStatusCode')):
-        # Log error
-        flash("Something happened while processing your solar data! Please try again.", category="error")
+    outputs = json.loads(response['Payload'].read().decode("utf-8"))
+
+    response_status = response.get('ResponseMetadata').get('HTTPStatusCode')
+    response_outputs = outputs.get('status').get('status_code')
+    if not check_http_response(response_status) or not check_http_response(response_outputs):
+        if response_outputs == 422:
+            # Log error - PvWatts call failed
+            flash(f"{outputs.get('errors')[0]}. If errors persist, just enter your Zip Code.", category="error")
+        else:
+            # Log error - Lambda invoke failed/PvWatts call failed
+            flash("Something happened while processing your solar data! Please try again.", category="error")
+
         return {}
 
-    return json.loads(response['Payload'].read().decode("utf-8"))
+    return outputs
 
 
 def store_inputs(
@@ -104,7 +113,6 @@ def store_inputs(
     """Store input data to solarCalculatorTable-Inputs."""
     table_item = {
         "uid": f"{username}-{time_stamp}",
-        "stage": "init" if capacity == 1 else "final",
         "name": username,
         "address": address,
         "monthly_data": monthly_data,
@@ -123,7 +131,7 @@ if __name__ == "__main__":
     # TEST SOLAR API CALL
     # inputs = {
     #     "uid": "Ryan",
-    #     "address": "123 My House",
+    #     "address": "123 My House, 93101",
     #     "capacity": 1
     # }
     # print(get_solar_data(inputs))
