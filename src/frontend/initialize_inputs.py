@@ -109,12 +109,15 @@ def get_solar_data(solar_inputs: dict) -> dict:
 
 
 def store_inputs(
-        username: str, time_stamp: str, address: str, monthly_data: dict, capacity: int, mod_data: dict) -> None:
+        username: str, time_stamp: str, stage: str, address: str, state: str, monthly_data: dict, capacity: int,
+        mod_data: dict) -> None:
     """Store input data to solarCalculatorTable-Inputs."""
     table_item = {
         "uid": f"{username}-{time_stamp}",
         "name": username,
+        "stage": stage,
         "address": address,
+        "state": state,
         "monthly_data": monthly_data,
         "mod_data": mod_data,
         "capacity": capacity,
@@ -124,10 +127,51 @@ def store_inputs(
 
     if not check_http_response(response_code=db_response):
         # Log warning
+        print(f'\t{table_item["uid"]}: Log warning')
+        pass
+    else:
+        # Log info - success
+        print(f'\t{table_item["uid"]}: Log info - success')
         pass
 
 
 if __name__ == "__main__":
+    # TEST STORE INPUTS
+    # import threading
+    # item2 = {
+    #     "uid": f"TEST-123",
+    #     "name": "TEST",
+    #     "stage": "init",
+    #     "address": "My Street 123",
+    #     "state": "Ohio",
+    #     "monthly_data": [1, 2, 1],
+    #     "mod_data": {
+    #         'mod_kwh': "0.4",
+    #         "mod_price": "200"
+    #     },
+    #     "capacity": "14",
+    # }
+    # item1 = {
+    #     "uid": f"TEST-321",
+    #     "name": "TEST",
+    #     "stage": "init",
+    #     "address": "My Street 123",
+    #     "state": "Ohio",
+    #     "monthly_data": [1] * 1000,
+    #     "mod_data": {
+    #         'mod_kwh': "0.4",
+    #         "mod_price": "200"
+    #     },
+    #     "capacity": "14",
+    # }
+    # print("creating threads")
+    # t1 = threading.Thread(target=store_inputs, args=[item1])
+    # t2 = threading.Thread(target=store_inputs, args=[item2])
+    #
+    # print("starting threads")
+    # t1.start()
+    # t2.start()
+
     # TEST SOLAR API CALL
     # inputs = {
     #     "uid": "Ryan",
