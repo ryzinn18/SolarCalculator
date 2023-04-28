@@ -35,45 +35,51 @@ def validate(function: Callable) -> Callable:
 
 
 @validate
-def _validate_monthly_init_data(monthly_data: dict):
+def _validate_energy_init_data(energy_data: list):
     """Validate that the data used to passed for initialization is correct."""
 
-    for month in MONTHS_MAP.values():
-        monthly_data[month] = [int(monthly_data[month][0]), float(monthly_data[month][1])]
+    for i in range(12):
+        int(energy_data[i])
 
 
 @validate
-def _validate_mod_init_data(mod_data: dict):
+def _validate_energy_init_data(cost_data: list):
     """Validate that the data used to passed for initialization is correct."""
 
-    mod_data['mod_kwh'] = float(mod_data['mod_kwh'])
-    mod_data['mod_price'] = int(mod_data['mod_price'])
+    for i in range(12):
+        float(cost_data[i])
+
+
+@validate
+def _validate_rating_init_data(rating: str):
+    """Validate that the data used to passed for initialization is correct."""
+
+    float(rating)
 
 
 @validate
 def _validate_string_init_data(data: str):
     """Validate that the Name and Address fields are not null or NoneType."""
-    if data == "" or data is None:
-        # Log Error
+    if not data:
         raise TypeError
 
 
-def validate_init_data(username: str, address: str, mod_data: dict, monthly_data: dict):
-    """"""
+def validate_init_data(username: str, address: str, rating: str, energy_data: list, cost_data: list) -> bool:
+    """Validate data passed & update data types in-place for mod_data & monthly_data."""
     name_validated = _validate_string_init_data(username)
     address_validated = _validate_string_init_data(address)
-    monthly_validated = _validate_monthly_init_data(monthly_data)
-    mod_validated = _validate_mod_init_data(mod_data)
+    rating_validated = _validate_rating_init_data(rating)
+    energy_validated = _validate_energy_init_data(energy_data)
+    cost_validated = _validate_energy_init_data(cost_data)
 
-    return True if (name_validated and address_validated and monthly_validated and mod_validated) else False
+    return True if (name_validated and address_validated and rating_validated and energy_validated and cost_validated) \
+        else False
 
 
-def suggest_capacity(monthly_data: dict, annual_output: float) -> int:
+def suggest_capacity(energy: list, annual_output: float) -> float:
     """Suggest solar array capacity (kwh) by dividing annual_consumption and annual_output"""
-    annual_consumption = sum(data[0] for data in monthly_data.values())
-    suggested_capacity = round(annual_consumption / annual_output)
 
-    return suggested_capacity
+    return round(sum(energy) / annual_output, 2)
 
 
 def suggest_mod_quantity(capacity: int, mod_rating: float) -> int:
@@ -108,20 +114,8 @@ def get_solar_data(solar_inputs: dict) -> dict:
     return outputs
 
 
-def store_inputs(
-        username: str, time_stamp: str, stage: str, address: str, state: str, monthly_data: dict, capacity: int,
-        mod_data: dict) -> None:
+def store_inputs(table_item: dict) -> None:
     """Store input data to solarCalculatorTable-Inputs."""
-    table_item = {
-        "uid": f"{username}-{time_stamp}",
-        "name": username,
-        "stage": stage,
-        "address": address,
-        "state": state,
-        "monthly_data": monthly_data,
-        "mod_data": mod_data,
-        "capacity": capacity,
-    }
 
     db_response = post_item_to_dynamodb(DYNAMODB.Table('solarCalculatorTable-Inputs'), item=table_item)
 
@@ -208,4 +202,9 @@ if __name__ == "__main__":
     #     )
     # )
     # print(type(mod['mod_price']))
+
+    # TEST IN PLACE TRANSFORMATION
+    # test = "0.3"
+    # _validate_rating_init_data(test)
+    # print(type(test))
     pass
