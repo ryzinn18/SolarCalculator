@@ -44,7 +44,7 @@
                         Toggle the below switch to enter default&nbsp;values.
                     </p>
                     <!-- Toggle Defaults Switch -->
-                    <label class="switch">
+                    <label id="def-switch" class="switch" type="button" [ngClass]="{'disabled-btn': isDisabled}">
                         <input id="fill-out-def-switch" type="checkbox" value="0" onclick=fillOutDefaults()>
                         <span class="slider round"></span>
                     </label>
@@ -52,8 +52,9 @@
                 </div>
             </div>
             <div class="row gx-4 gx-lg-5 justify-content-center">
-                <form id="input-data" name="input-data" accept-charset="utf-8" method="POST" action="/run-tool">
-                    <fieldset id="tool-frm-inputs">
+<!--                <form id="init-data" name="input-data" accept-charset="utf-8" method="POST" action="/init-data">-->
+                <form id="init-data" name="input-data" accept-charset="utf-8">
+                    <fieldset id="frm-init" >
                         <center>
                         <table>
                             <!--Name Row-->
@@ -72,21 +73,21 @@
                             </tr>
                             <!--Mod kWh Row-->
                             <tr>
-                                <td><b>Solar Module kWh Rating<a class="fa-solid fa-circle-info" data-bs-toggle="collapse" href="#rating"></a>: </b></td>
+                                <td><b>Solar Module Rating (kWh)<a class="fa-solid fa-circle-info" data-bs-toggle="collapse" href="#rating-info"></a>: </b></td>
                                 <td>
-                                    <input class="form-control" type="text" name="mod_kwh" id="mod_kwh" value="0.4"/>
+                                    <input class="form-control" type="text" name="rating" id="rating" value="0.4"/>
                                 </td>
                             </tr>
                         </table>
-			    <div id="rating" class="col-lg-8 collapse card bg-primary">
-                                <div class="card-body text-white" style="padding-top: 1rem">
+			            <div id="rating-info" class="col-lg-8 collapse card bg-primary">
+                            <div class="card-body text-white" style="padding-top: 1rem">
                                     This is the capacity of a single solar module in your potential array. This
                                     default value comes from the standard residential module rating being
                                     0.4 kWh. Note that the higher the rating, the less modules you would need
                                     to&nbsp;purchase!
-                                </div>
                             </div>
-                            <br>
+                        </div>
+                        <br>
                         <table>
                             <!--Header Row-->
                             <tr>
@@ -110,11 +111,62 @@
                         </center>
                         <br>
                         <div class="d-grid" >
-                            <center><button class="btn btn-primary btn-xl" id="input-data-button" type="submit"  onclick="showLoader()">Run Tool</button></center>
+                            <center><button class="btn btn-primary btn-xl" id="input-data-button" onclick="initialize()">Initialize</button></center>
                         </div>
                     </fieldset>
                 </form>
             </div>
+            <br>
+            <!-- Hidden Final Form -->
+             <center>
+            <div id="final-data" class="collapse card bg-primary mb-5 col-lg-8" style="display:none;">
+                <div class="row gx-4 gx-lg-5 justify-content-center" >
+                    <form id="frm-final-data" name="final-data" accept-charset="utf-8">
+                        <fieldset id="frm-final">
+                            <div class="d-grid" >
+                                <center><button class="btn btn-secondary btn-xl" id="go-back-button" onclick="returnToInit()" style="display: none;">Go Back</button></center>
+                            </div>
+                            <br>
+                            <table>
+                                <!--Mod Quantity-->
+                                <tr class="card bg-secondary">
+                                    <label for="mod-quantity"><b>Solar Module Quantity:</b></label>
+                                    <input class="form-control" type="number" name="mod-quantity" id="mod-quantity" required style="max-width: 4rem" onclick="calculateArrayValues()"/>
+                                </tr>
+                                <!--Array Capacity-->
+                                <tr>
+                                    <td><label><b>Array Capacity in kWh: </b></label></td>
+                                    <td><label id="capacity"></label><label> kWh</label></td>
+                                </tr>
+                                <!--Expected Price per Watt-->
+                                <tr>
+                                    <td><label><b>Estimated Price per Watt in <label id="state"></label>: </b></label></td>
+                                    <td><label>$</label><label id="state-price"></label><label></label></td>
+                                </tr>
+                                <!--Total Price Before Tax Credit-->
+                                <tr>
+                                    <td><label><b>Estimated Price Before Federal Tax Credit: </b></label></td>
+                                    <td><label>$</label><label id="total-price"></label><label></label></td>
+                                </tr>
+                                <!--Tax Credit-->
+                                <tr>
+                                    <td><label><b>Estimated Federal Tax Credit: </b></label></td>
+                                    <td><label>-$</label><label id="tax-credit"></label><label></label></td>
+                                </tr>
+                                <!--Total Price After Tax Credit-->
+                                <tr>
+                                    <td><label><b>Estimated Price After Federal Tax Credit: </b></label></td>
+                                    <td><label>$</label><label id="discount-price"></label><label></label></td>
+                                </tr>
+                            </table>
+                        </fieldset>
+                    </form>
+                </div>
+                <div class="d-grid" >
+                    <center><button class="btn btn-primary btn-xl" id="get-results-button" onclick="getResults()">Get Results</button></center>
+                </div>
+            </div>
+            </center>
         </div>
     </section>
     <!-- Contact-->
