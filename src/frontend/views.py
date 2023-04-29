@@ -6,7 +6,7 @@ from datetime import datetime as dt
 from decimal import Decimal
 
 from .initialize_inputs import *
-from .utils import MONTHS_MAP, clean_name, import_json
+from src.utils.utils import MONTHS_MAP, clean_name, import_json, get_item_from_dynamodb
 
 views = Blueprint("views", __name__)
 
@@ -26,74 +26,93 @@ def documentation():
     return render_template("docs.html", user=current_user)
 
 
-@views.route("/init-data/")
-def init_tool():
-    """Initialize the Solar Calculator tool."""
+@views.route("/inputs/validate/")
+def validate():
+    """Validate inputs"""
 
-    print((request.args.get('energy').split(",")))
-
-    # Define request parameters from request
+    # Create time stamp for uid
     time_stamp = dt.now().__str__().replace(' ', '_').replace(':', '.')
+    # Define input request parameters
     username = clean_name(request.args.get("name"))
-    uid = f"{username}-{time_stamp}"
     address = request.args.get("address")
     rating = request.args.get("rating")
-    energy_data = request.args.get("energy").split(",")
-    cost_data = request.args.get("cost").split(",")
-    # Validate Input Data
-    if not validate_init_data(username, address, rating, energy_data, cost_data):
+    energy_monthly = request.args.get("energy").split(",")
+    cost_monthly = request.args.get("cost").split(",")
+    # Validate inputs
+    if not validate_init_data(username, address, rating, energy_monthly, cost_monthly):
         # RETURN ERRANT JSON
         return redirect(url_for("views.home", user=current_user))
-    rating = float(rating)
-    energy_data = [int(n) for n in energy_data]
-    cost_data = [float(n) for n in cost_data]
+    # Define uid
+    uid = f"{username}-{time_stamp}"
+    # Transform to correct data types
+    rating = round(float(rating), 2)
+    energy_monthly = [int(n) for n in energy_monthly]
+    cost_monthly = [float(n) for n in cost_monthly]
+    # Calculate annual figures
+    energy_annual = sum(energy_monthly)
+    cost_annual = round(sum(cost_monthly))
 
-    # Call Lambda sc-be-solar for init solar data
-    init_solar_inputs = {
-        "uid": uid,
-        "address": address,
-        "capacity": 1
-    }
-    init_solar_data = get_solar_data(init_solar_inputs)
-    # if not init_solar_data:
-    #     # RETURN ERRANT JSON
-    #     return redirect(url_for("views.home", user=current_user))
-
-    # Calculate capacity and mod_quantity
-    capacity = suggest_capacity(energy_data, annual_output=init_solar_data.get('output_annual'))
-    # noinspection PyTypeChecker
-    mod_quantity = suggest_mod_quantity(capacity=capacity, mod_rating=rating)
-    state = init_solar_data.get('state')
-    state_price = round(import_json('/Users/ryanwright-zinniger/Desktop/SolarCalculator/src/frontend/static/data/SolarCostData.json').get(state), 2)
-    if not state_price:
-        # Log Error
-        pass
-    total_price = round(state_price * capacity * 1000)
-    tax_credit = round(total_price * 0.3)
-    discount_price = round(total_price * 0.7)
-
+    # Create init data item
     init_data = {
         "uid": uid,
         "name": username,
-        "stage": "init",
+        "time_stamp": time_stamp,
         "address": address,
-        "energy": energy_data,
-        "cost": [Decimal(str(n)) for n in cost_data],
-        "state": state,
-        "state_price": Decimal(str(state_price)),
-        "capacity": Decimal(str(capacity)),             # suggested
-        "mod_quantity": mod_quantity,                   # suggested
-        "tax_credit": tax_credit,
-        "total_price": total_price,
-        "discount_price": discount_price,
+        "rating": Decimal(str(rating)),
+        "energy_monthly": energy_monthly,
+        "cost_monthly": [Decimal(str(n)) for n in cost_monthly],
+        "energy_annual": energy_annual,
+        "cost_annual": cost_annual,
+        "state": None,
+        "state_price": None,
+        "capacity": None,
+        "mod_quantity": None,
+        "total_price": None,
+        "tax_credit": None,
+        "discount_price": None,
         "status": {
             "status_code": 200,
-            "message": "initialization steps completed."
+            "message": "Validation steps completed."
         },
     }
 
-    # Create and run thread to store init inputs
-    thread = threading.Thread(target=store_inputs, args=[init_data])
-    thread.start()
+    response = store_inputs(table_name='sc-inputs', table_item=init_data)
+    if not check_http_response(response_code=response.get('status').get('status_code')):
+        return jsonify(response)
+    else:
+        return jsonify(init_data)
 
-    return jsonify(init_data)
+
+@views.route("/get-solar/")
+def get_solar():
+    """"""
+    uid = request.args.get('uid')
+    address = request.args.get('address')
+    capacity = float(request.args.get('capacity'))
+
+    # Call Lambda sc-be-solar for init solar data
+    solar_inputs = {
+        "uid": uid,
+        "address": address,
+        "capacity": capacity
+    }
+    init_solar_data = get_solar_data(solar_inputs)
+    if not init_solar_data:
+        return jsonify({"status": {"status_code": 442, "message": "Unable to retrieve Solar data."}})
+
+    solar_data = {
+        "uid": uid,
+        "address": address,
+        "capacity": capacity,
+        "output_monthly": init_solar_data.get('output_monthly'),
+        "output_annual": init_solar_data.get('output_annual'),
+        "status": {
+            "status_code": 200,
+            "message": "Solar data retrieved successfully."
+        }
+    }
+
+    return jsonify(solar_data)
+
+
+
