@@ -1,31 +1,30 @@
-import boto3
-from flask import flash
+from boto3 import client as boto_client
 
 import json
 
 from src.utils.utils import check_http_response
 
 
-def get_solar_data(solar_inputs: dict) -> dict:
+def invoke_lambda(function: str, inputs: dict) -> dict:
     """Call Lambda function sc-be-solar for solar data."""
-    lambda_client = boto3.client('lambda')
+    lambda_client = boto_client('lambda')
 
     response = lambda_client.invoke(
-        FunctionName='sc-be-solar',
+        FunctionName=function,
         InvocationType='RequestResponse',
-        Payload=json.dumps(solar_inputs)
+        Payload=json.dumps(inputs)
     )
-    outputs = json.loads(response['Payload'].read().decode("utf-8"))
+    outputs = json.loads(response.get('Payload').read().decode("utf-8"))
 
     response_status = response.get('ResponseMetadata').get('HTTPStatusCode')
     response_outputs = outputs.get('status').get('status_code')
     if not check_http_response(response_status) or not check_http_response(response_outputs):
         if response_outputs == 422:
             # Log error - PvWatts call failed
-            flash(f"{outputs.get('errors')[0]}. If errors persist, just enter your Zip Code.", category="error")
+            pass
         else:
             # Log error - Lambda invoke failed/PvWatts call failed
-            flash("Something happened while processing your solar data! Please try again.", category="error")
+            pass
 
         return {}
 
