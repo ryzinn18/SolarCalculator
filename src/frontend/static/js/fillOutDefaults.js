@@ -17,8 +17,8 @@ function fillOutDefaults() {
         705, 715, 710, 702, 662, 780
     ];
     if (do_switch == 0) {
-        // Fill out main 2 inputs: Name & Address
-        document.getElementById(`name`).value = "Default Dan";
+        // Fill out main 2 inputs: Username & Address
+        document.getElementById(`username`).value = "Default Dan";
         document.getElementById(`address`).value = "93101";
         // Fill out monthly values for Cost & Energy
         for (let i = 0; i < months.length; i++) {
@@ -27,8 +27,8 @@ function fillOutDefaults() {
         }
         document.getElementById(`fill-out-def-switch`).value = "1"
     } else {
-            // Fill out main 2 inputs: Name & Address
-        document.getElementById(`name`).value = null;
+            // Fill out main 2 inputs: Username & Address
+        document.getElementById(`username`).value = null;
         document.getElementById(`address`).value = null;
         // Fill out monthly values for Cost & Energy
         for (let i = 0; i < months.length; i++) {
