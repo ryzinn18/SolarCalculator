@@ -4,7 +4,7 @@ import boto3
 import json
 from typing import Callable
 
-from .utils import post_item_to_dynamodb, DYNAMODB, check_http_response, MONTHS_MAP
+from src.utils.utils import post_item_to_dynamodb, DDB_RESOURCE, check_http_response, MONTHS_MAP
 
 
 def validate(function: Callable) -> Callable:
@@ -76,18 +76,6 @@ def validate_init_data(username: str, address: str, rating: str, energy_data: li
         else False
 
 
-def suggest_capacity(energy: list, annual_output: float) -> float:
-    """Suggest solar array capacity (kwh) by dividing annual_consumption and annual_output"""
-
-    return round(sum(energy) / annual_output, 2)
-
-
-def suggest_mod_quantity(capacity: int, mod_rating: float) -> int:
-    """Suggest mod quantity by dividing capacity and mod_rating and rounding up."""
-
-    return int(capacity // mod_rating) + 1
-
-
 def get_solar_data(solar_inputs: dict) -> dict:
     """Call Lambda function sc-be-solar for solar data."""
     lambda_client = boto3.client('lambda')
@@ -114,19 +102,31 @@ def get_solar_data(solar_inputs: dict) -> dict:
     return outputs
 
 
-def store_inputs(table_item: dict) -> None:
+def store_inputs(table_name: str, table_item: dict) -> dict:
     """Store input data to solarCalculatorTable-Inputs."""
 
-    db_response = post_item_to_dynamodb(DYNAMODB.Table('solarCalculatorTable-Inputs'), item=table_item)
+    ddb_table = DDB_RESOURCE.Table(table_name)
 
-    if not check_http_response(response_code=db_response):
+    ddb_response = post_item_to_dynamodb(ddb_table, item=table_item)
+
+    if not check_http_response(response_code=ddb_response):
         # Log warning
         print(f'\t{table_item["uid"]}: Log warning')
-        pass
+        return {
+            "status": {
+                "status_code": 442,
+                "message": "Could not write info to database."
+            }
+        }
     else:
         # Log info - success
         print(f'\t{table_item["uid"]}: Log info - success')
-        pass
+        return {
+            "status": {
+                "status_code": 200,
+                "message": "Data successfully written to database."
+            }
+        }
 
 
 if __name__ == "__main__":
