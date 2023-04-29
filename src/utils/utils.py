@@ -70,7 +70,7 @@ def post_item_to_dynamodb(dynamo_table, item: dict) -> int:
 
     return dynamo_table.put_item(
         Item=item
-    )['ResponseMetadata']['HTTPStatusCode']
+    ).get('ResponseMetadata').get('HTTPStatusCode')
 
 
 def get_item_from_dynamodb(ddb_name: str, key: dict) -> dict:
@@ -80,7 +80,7 @@ def get_item_from_dynamodb(ddb_name: str, key: dict) -> dict:
     response = ddb_table.get_item(
         Key=key
     )
-    return response['Item']
+    return response
 
 
 def update_item_in_dynamodb(ddb_name: str, key: dict, update_expression: str, values: dict) -> int:
@@ -93,7 +93,7 @@ def update_item_in_dynamodb(ddb_name: str, key: dict, update_expression: str, va
         ReturnValues="UPDATED_NEW"
     )
 
-    return response['ResponseMetadata']['HTTPStatusCode']
+    return response.get('ResponseMetadata').get('HTTPStatusCode')
 
 
 def clean_name(name: str) -> str:

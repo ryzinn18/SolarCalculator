@@ -1,11 +1,12 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import current_user
 
-import threading
 from datetime import datetime as dt
 from decimal import Decimal
 
 from .initialize_inputs import *
+from .invoke_lambda import *
+from .invoke_ddb import *
 from src.utils.utils import MONTHS_MAP, clean_name, import_json, get_item_from_dynamodb, update_item_in_dynamodb
 
 views = Blueprint("views", __name__)
@@ -160,3 +161,23 @@ def finalize():
         return jsonify({"status": {"status_code": 400, "message": "Failed to upload DDB."}})
     else:
         return jsonify({"status": {"status_code": 200, "message": "Data finalized."}})
+
+
+@views.route('/results/')
+def get_results():
+    """"""
+
+    # Declare parameters for getting item from ddb
+    username = clean_name(request.args.get('username'))
+    time_stamp = request.args.get('time')
+
+    # Get item from ddb
+    response = get_item_from_dynamodb(ddb_name='sc-inputs', key={'username': username, 'time_stamp': time_stamp})
+
+    if not check_http_response(response_code=response.get('ResponseMetadata').get('HTTPStatusCode')):
+        return jsonify({"status": {"status_code": 400, "message": "Failed to upload DDB."}})
+
+
+
+
+    return jsonify({"status": {"status_code": 200, "message": "Data finalized."}})

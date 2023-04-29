@@ -198,12 +198,17 @@ function finalize() {
                 .then((inputs) => {
                     if (inputs.status.status_code == 200) {
                         // If the /inputs/finalize/ call is successful, call /get-results
-                        alert('GREAT SUCCESS');
                         const results_parameters = `?username=${finalData.username}&time=${finalData.time_stamp}`
                         return fetch(`/results/${results_parameters}`)
-                            .then((res_final) => res_final.json())
-                            .then((inputs) => {
-
+                            .then((res) => res.json())
+                            .then((results) => {
+                                if (results.status.status_code == 200) {
+                                    alert('GREAT SUCCESS');
+                                    _toggleLoaderOff()
+                                } else {
+                                    alert('ALMOST GREAT SUCCESS');
+                                    _toggleLoaderOff()
+                                }
                             })
                     } else {
                         // If the /get-solar call is unsuccessful, alert user
