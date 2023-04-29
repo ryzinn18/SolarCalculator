@@ -121,35 +121,20 @@ def finalize():
     username = clean_name(request.args.get("username"))
     time_stamp = request.args.get('time')
     capacity = round(float(request.args.get('capacity')), 2)
-    rating = round(float(request.args.get('rating')), 2)
+    mod_quantity = round(float(request.args.get('quantity')))
     state = request.args.get('state')
     output_monthly = [round(int(n)) for n in request.args.get('monthly').split(",")]
     output_annual = round(float(request.args.get('annual')))
 
-    state_price = round(float(import_json(
-        '/Users/ryanwright-zinniger/Desktop/SolarCalculator/src/frontend/static/data/SolarCostData.json').get(state)),
-                        2)
-    if not state_price:
-        return jsonify({"status": {"status_code": 400, "message": "Failed to load state cost data."}})
-
-    mod_quantity = int(capacity // rating) + 1
-    total_price = round(state_price * capacity * 1000)
-    tax_credit = round(total_price * 0.3)
-    discount_price = round(total_price * 0.7)
-
     # Declare update parameters
-    ddb_update_expression = "set state_residence=:sr, state_price=:sp, output_monthly=:om, output_annual=:oa, " \
-                            "array_capacity=:ac, mod_quantity=:mq, total_price=:tp, tax_credit=:tc, discount_price=:dp"
+    ddb_update_expression = "set state_residence=:sr, output_monthly=:om, output_annual=:oa, " \
+                            "array_capacity=:ac, mod_quantity=:mq"
     ddb_update_values = {
         ':sr': state,
-        ':sp': Decimal(str(state_price)),
         ':om': output_monthly,
         ':oa': output_annual,
         ':ac': Decimal(str(capacity)),
-        ':mq': mod_quantity,
-        ':tp': total_price,
-        ':tc': tax_credit,
-        ':dp': discount_price
+        ':mq': mod_quantity
     }
     response = update_item_in_dynamodb(
         ddb_name='sc-inputs',
@@ -187,7 +172,6 @@ def get_results():
         "time_stamp": time_stamp,
         "address": data.get('address'),
         "state": data.get('state_residence'),
-        "price_per_watt": round(float(data.get('state_price')), 2),
         "rating": round(float(data.get('rating')), 2),
         "capacity": round(float(data.get('array_capacity')), 2),
         "mod_quantity": int(data.get('mod_quantity')),
@@ -197,9 +181,6 @@ def get_results():
         "consumption_annual": int(data.get('consumption_annual')),
         "output_monthly": [int(n) for n in data.get('output_monthly')],
         "output_annual": int(data.get('output_annual')),
-        "total_price": int(data.get('total_price')),
-        "tax_credit": int(data.get('tax_credit')),
-        "discount_price": int(data.get('discount_price')),
     }
     # results_data = invoke_lambda(function='sc-be-results', inputs=inputs)
     # if not results_data:

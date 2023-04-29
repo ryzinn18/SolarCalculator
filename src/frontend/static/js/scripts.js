@@ -91,7 +91,7 @@ function _getFinalData() {
         username: document.getElementById('username').value,
         time_stamp: document.getElementById('time-stamp').innerHTML,
         address: document.getElementById('address').value,
-        mod_quantity: document.getElementById('mod-quantity').value,
+        quantity: document.getElementById('mod-quantity').value,
         capacity: document.getElementById('capacity').innerHTML,
         rating: document.getElementById('rating').value,
     };
@@ -192,7 +192,7 @@ function finalize() {
     .then((solar_data) => {
         if (solar_data.status.status_code == 200) {
             // If the /get-solar call is successful, call /inputs/finalize/
-            const final_parameters = `?username=${finalData.username}&time=${finalData.time_stamp}&capacity=${finalData.capacity}&rating=${finalData.rating}&monthly=${solar_data.output_monthly}&annual=${solar_data.output_annual}&state=${solar_data.state}`;
+            const final_parameters = `?username=${finalData.username}&time=${finalData.time_stamp}&quantity=${finalData.quantity}&capacity=${finalData.capacity}&rating=${finalData.rating}&monthly=${solar_data.output_monthly}&annual=${solar_data.output_annual}&state=${solar_data.state}`;
             return fetch(`/inputs/finalize/${final_parameters}`)
                 .then((res_final) => res_final.json())
                 .then((inputs) => {
