@@ -4,7 +4,7 @@ from flask_login import current_user
 from datetime import datetime as dt
 from decimal import Decimal
 
-from .initialize_inputs import *
+from .validate_inputs import *
 from .invoke_lambda import *
 from .invoke_ddb import *
 from src.utils.utils import MONTHS_MAP, clean_name, import_json, get_item_from_dynamodb, update_item_in_dynamodb
@@ -94,7 +94,7 @@ def get_solar():
         "address": address,
         "capacity": capacity
     }
-    init_solar_data = get_solar_data(solar_inputs)
+    init_solar_data = invoke_lambda(function='sc-be-solar', inputs=solar_inputs)
     if not init_solar_data:
         return jsonify({"status": {"status_code": 442, "message": "Unable to retrieve Solar data."}})
 
@@ -168,16 +168,41 @@ def get_results():
     """"""
 
     # Declare parameters for getting item from ddb
+    name = request.args.get('username')
     username = clean_name(request.args.get('username'))
     time_stamp = request.args.get('time')
 
     # Get item from ddb
     response = get_item_from_dynamodb(ddb_name='sc-inputs', key={'username': username, 'time_stamp': time_stamp})
-
     if not check_http_response(response_code=response.get('ResponseMetadata').get('HTTPStatusCode')):
         return jsonify({"status": {"status_code": 400, "message": "Failed to upload DDB."}})
 
+    # Declare data item from response for easy access
+    data = response.get('Item')
 
-
+    # Call Lambda sc-be-results for results data
+    inputs = {
+        "name": name,
+        "username": username,
+        "time_stamp": time_stamp,
+        "address": data.get('address'),
+        "state": data.get('state_residence'),
+        "price_per_watt": round(float(data.get('state_price')), 2),
+        "rating": round(float(data.get('rating')), 2),
+        "capacity": round(float(data.get('array_capacity')), 2),
+        "mod_quantity": int(data.get('mod_quantity')),
+        "cost_monthly": [round(float(n), 2) for n in data.get('cost_monthly')],
+        "cost_annual": int(data.get('cost_annual')),
+        "energy_monthly": [int(n) for n in data.get('energy_monthly')],
+        "energy_annual": int(data.get('energy_annual')),
+        "output_monthly": [int(n) for n in data.get('output_monthly')],
+        "output_annual": int(data.get('output_annual')),
+        "total_price": int(data.get('total_price')),
+        "tax_credit": int(data.get('tax_credit')),
+        "discount_price": int(data.get('discount_price')),
+    }
+    results_data = invoke_lambda(function='sc-be-results', inputs=inputs)
+    if not results_data:
+        return jsonify({"status": {"status_code": 442, "message": "Unable to retrieve Solar data."}})
 
     return jsonify({"status": {"status_code": 200, "message": "Data finalized."}})
