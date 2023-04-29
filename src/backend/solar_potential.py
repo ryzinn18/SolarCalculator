@@ -11,7 +11,7 @@ from config import NREL_API_KEY
 LOGGER = getLogger(__name__)
 
 
-def _get_params(capacity: int, address: str,
+def _get_params(capacity: float, address: str,
                 azimuth="180", tilt="40", array_type="1", module_type="1", losses="10") -> dict:
     """
     Get the parameters to be used to retrieve the iridescence info.
