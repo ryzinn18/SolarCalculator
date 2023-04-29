@@ -1,6 +1,6 @@
 # SolarCalculator/src/utils.py
 from pydantic import BaseModel, conlist, conint, PositiveInt, PositiveFloat
-from boto3 import resource as boto_resource
+from boto3 import resource as boto_resource, client as boto_client
 
 from typing import Union, Dict, Any, List, Type, TypeVar, Literal
 from os.path import join
@@ -9,7 +9,8 @@ from pathlib import PurePath, Path
 # from config import GOOGLE_API_SHEET_ID
 
 
-DYNAMODB = boto_resource('dynamodb')
+DDB_RESOURCE = boto_resource('dynamodb')
+DDB_CLIENT = boto_client('dynamodb')
 
 JSON = Union[Dict[str, Any], List[Any], int, str, float, bool, Type[None]]
 ROOT = Path(__file__).parents[1]
@@ -70,6 +71,29 @@ def post_item_to_dynamodb(dynamo_table, item: dict) -> int:
     return dynamo_table.put_item(
         Item=item
     )['ResponseMetadata']['HTTPStatusCode']
+
+
+def get_item_from_dynamodb(ddb_name: str, key: dict) -> dict:
+    """Get item from DynamoDB and return that item as dict."""
+
+    ddb_table = DDB_RESOURCE.Table(ddb_name)
+    response = ddb_table.get_item(
+        Key=key
+    )
+    return response['Item']
+
+
+def update_item_in_dynamodb(ddb_name: str, key: dict, update_expression: str, values: dict) -> int:
+    """Update an item in DynamoDB, return the response code."""
+    ddb_table = DDB_RESOURCE.Table(ddb_name)
+    response = ddb_table.update_item(
+        Key=key,
+        UpdateExpression=update_expression,
+        ExpressionAttributeValues=values,
+        ReturnValues="UPDATED_NEW"
+    )
+
+    return response['ResponseMetadata']['HTTPStatusCode']
 
 
 def clean_name(name: str) -> str:
@@ -135,7 +159,7 @@ def export_json(j_obj: JSON, target_directory: str, out_name: str) -> None:
     with open(output, 'w') as out:
         out.write(j_obj)
 
-    LOGGER.info(f'The json file was successfully exported: {output}')
+    # LOGGER.info(f'The json file was successfully exported: {output}')
 
 
 def delete_s3_obj(bucket_name: str, obj_key: str) -> int:
@@ -167,8 +191,6 @@ class InputData(BaseModel):
     cost_monthly: FloatListMonthly
     cost_annual: PositiveFloat
     cost_per_kwh: PositiveFloat
-    # Optional
-    note: str = None
     # Default
     units_consumption = "kiloWattHours"
     units_cost = "Dollars"
@@ -215,4 +237,5 @@ class Results(BaseModel):
 
 
 if __name__ == '__main__':
+    print(get_item_from_dynamodb(ddb_name='solarCalculatorTable-Inputs', uid='DefaultDan-2023-04-28_11.10.05.641765'))
     pass
