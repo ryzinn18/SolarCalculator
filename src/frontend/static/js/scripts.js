@@ -49,111 +49,179 @@ window.addEventListener('DOMContentLoaded', event => {
 
 });
 
-
-function toggleLoader() {
-    // Temporarily display loader page after submitting input
-    let status = document.getElementById('loading').style.display;
-    if (status == "block") {
-        document.getElementById('loading').style.display = "none";
-    }
-    else {
-        document.getElementById('loading').style.display = "block";
-    }
-//    // Show the loader
-//    document.getElementById('loading').style.display = "block";
-//    // Remove loader after 12 seconds (request takes <= 12 seconds before timeout)
-//    setTimeout(function() {
-//        document.getElementById('loading').style.display = "none";
-//    }, 12000);
-}
-
-function toggleLoaderOn() {
+function _toggleLoaderOn() {
     // Temporarily display loader page after submitting input
     document.getElementById('loading').style.display = "block";
 }
 
-function toggleLoaderOff() {
+function _toggleLoaderOff() {
     // Temporarily display loader page after submitting input
     document.getElementById('loading').style.display = "none";
 }
 
-function initialize() {
-    // Organize all of the initialization of data
+function _getInitData() {
+    // Get all of the data from the initial input form
 
-    // Toggle loader to on
-    document.getElementById('loading').style.display = "block";
+    // Define initData object from input form values
+    let initData = {
+        name: document.getElementById('name').value,
+        address: document.getElementById('address').value,
+        rating: document.getElementById('rating').value,
+        energy: [],
+        cost: []
+    };
 
-    // Lock the init form
+    // Define months list for keying energy and cost values
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    // Iterate through months using months as part of key for cost and values figures
+    for (let i = 0; i < months.length; i++) {
+        initData.energy.push(document.getElementById(`energy${months[i]}`).value);
+        initData.cost.push(document.getElementById(`cost${months[i]}`).value);
+    };
+
+    return initData;
+}
+
+
+function _getFinalData() {
+    // Get necessary data from final form
+    const finalData = {
+        uid: document.getElementById('uid').innerHTML,
+        address: document.getElementById('address').value,
+        mod_quantity: document.getElementById('mod-quantity').value,
+        capacity: document.getElementById('capacity').innerHTML,
+    };
+
+    return finalData;
+}
+
+
+function _lockInitForm() {
+    // Locks the initial input form
     document.getElementById('def-switch').style.display = "none";
     document.getElementById('frm-init').disabled = true;
     document.getElementById('input-data-button').style.display = "none";
     document.getElementById('go-back-button').style.display = "block";
-
-    // Define parameters entered in form
-    const name = document.getElementById('name').value;
-    const address = document.getElementById('address').value;
-    const rating = document.getElementById('rating').value;
-    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
-    let energy = []
-    let cost = []
-    for (let i = 0; i < months.length; i++) {
-        energy.push(document.getElementById(`energy${months[i]}`).value);
-        cost.push(document.getElementById(`cost${months[i]}`).value);
-    }
-
-    // call /init-tool
-    fetch(`/init-data/?name=${name}&address=${address}&rating=${rating}&energy=${energy}&cost=${cost}`)
-    .then((res) => res.json())
-    .then((data) => {
-        if (data["status"]["status_code"] == 200) {
-            document.getElementById('final-data').style.display = "block";
-
-            document.getElementById('mod-quantity').value = data["mod_quantity"];
-            document.getElementById('capacity').innerHTML = data["capacity"];
-            document.getElementById('state').innerHTML = data["state"];
-            document.getElementById('state-price').innerHTML = data["state_price"];
-            document.getElementById('total-price').innerHTML = data["total_price"];
-            document.getElementById('tax-credit').innerHTML = data["tax_credit"];
-            document.getElementById('discount-price').innerHTML = data["discount_price"];
-        }
-        else {
-            alert("Something went wrong.")
-        }
-    }).catch((e) => alert(`An error occurred: ${e}`));
-
-    document.getElementById('loading').style.display = "none";
 }
 
-function returnToInit() {
+
+function _showFinalSection(init_data, solar_data) {
+    // Calculate suggested figures for display
+    const capacity = Math.round((init_data.energy_annual / solar_data.output_annual) * 100) / 100;
+    const quantity = Math.round(capacity / init_data.rating) + 1;
+    // Display final-data section
+    document.getElementById('final-data').style.display = "block";
+    // Fill out final-data section
+    document.getElementById('uid').innerHTML = solar_data.uid;
+    document.getElementById('mod-quantity').value = quantity;
+    document.getElementById('capacity').innerHTML = capacity;
+}
+
+
+function unlockInitForm() {
+    // Unlocks the initial input form
     document.getElementById('final-data').style.display = "none";
     document.getElementById('def-switch').style.display = "block";
     document.getElementById('frm-init').disabled = false;
     document.getElementById('input-data-button').style.display = "block";
     //document.getElementById('go-back-button').style.display = "none";
-
 }
 
-function calculateArrayValues() {
+
+function initialize() {
+    // Organize all of the initialization of data
+
+    // Toggle loader to on
+    _toggleLoaderOn();
+    // Lock the init form
+    _lockInitForm();
+    // Define values entered in form
+    const initData = _getInitData();
+
+    // First, call /validate
+    // Define /validate args
+    const init_parameters = `?name=${initData.name}&address=${initData.address}&rating=${initData.rating}&energy=${initData.energy}&cost=${initData.cost}`;
+    // Fetch /validate
+    fetch(`/inputs/validate/${init_parameters}`)
+    .then((res_validate) => res_validate.json())
+    .then((init_data) => {
+        if (init_data.status.status_code == 200) {
+            // If Validating data is successful, get init solar data
+            // Define /get-solar args
+            const solar_parameters = `?uid=${init_data.uid}&address=${init_data.address}&capacity=1`;
+            // Fetch /get-solar
+            return fetch(`/get-solar/${solar_parameters}`)
+                .then((res_solar) => res_solar.json())
+                .then((solar_data) => {
+                    if (solar_data.status.status_code == 200) {
+                        // If the /get-solar call is successful, display final section
+                        _showFinalSection(init_data, solar_data);
+                        _toggleLoaderOff();
+                    } else {
+                        // If the /get-solar call is unsuccessful, alert user
+                        alert(`Error: ${solar_data.status.message}`);
+                        _toggleLoaderOff();
+                    }
+                }).catch((e) => alert(`Error: ${e}`));
+        } else {
+            // If the /validate call is unsuccessful, alert user
+            alert(`Error: ${init_data.status.message}`);
+            _toggleLoaderOff();
+        }
+    }).catch((e) => alert(`Error: ${e}`));
+}
+
+
+function finalize() {
+    // Organize getting the results data
+
+    // Toggle loader to on
+    //toggleLoaderOn();
+
+    // Define UID parameter for accessing init data
+    //const initData = _getInitData();
+    const finalData = _getFinalData();
+
+    const solar_parameters = `?uid=${finalData.uid}&address=${finalData.address}&capacity=${finalData.capacity}`
+    fetch(`/get-solar/${solar_parameters}`)
+    .then((res_solar) => res_solar.json())
+    .then((solar_data) => {
+        if (solar_data.status.status_code == 200) {
+            // If the /get-solar call is successful, display final section
+            const final_parameters = `?uid=${finalData.uid}`
+            alert('GREAT SUCCESS')
+            return fetch(`/inputs/finalize/${solar_parameters}`)
+                .then((res_final) => res_final.json())
+                .then((inputs) => {
+                    if (inputs.status.status_code == 200) {
+                        // If the /get-solar call is successful, display final section
+                        _showFinalSection(init_data, solar_data);
+                        _toggleLoaderOff();
+                    } else {
+                        // If the /get-solar call is unsuccessful, alert user
+                        alert(`Error: ${solar_data.status.message}`);
+                        _toggleLoaderOff();
+                    }
+                }).catch((e) => alert(`Error: ${e}`));
+            } else {
+                // If the /get-solar call is unsuccessful, alert user
+                alert(`Error: ${solar_data.status.message}`);
+                _toggleLoaderOff();
+            }
+        }).catch((e) => alert(`Error: ${e}`));
+}
+
+
+function calculateCapacity() {
     // Function to dynamically update estimate values based on quantity of solar modules
 
     // Obtain current values
     const quantity = document.getElementById('mod-quantity').value;
     const rating = Number(document.getElementById('rating').value);
-    const price = parseFloat(document.getElementById('state-price').innerHTML);
 
     // Calculate new value
     const capacity = Math.round(quantity * rating * 100) / 100;
-    const total_price = Math.round(capacity * price * 1000);
-    const tax_credit = Math.round(total_price * 0.3);
-    const discount_price = Math.round(total_price * 0.7);
 
     // Update new values
     document.getElementById('capacity').innerHTML = capacity;
-    document.getElementById('total-price').innerHTML = total_price;
-    document.getElementById('tax-credit').innerHTML = tax_credit;
-    document.getElementById('discount-price').innerHTML = discount_price;
-}
-
-function getResults() {
-
 }
