@@ -111,7 +111,7 @@ def store_inputs(table_name: str, table_item: dict) -> dict:
 
     if not check_http_response(response_code=ddb_response):
         # Log warning
-        print(f'\t{table_item["uid"]}: Log warning')
+        print(f'\t{table_item["username"]}: Log warning')
         return {
             "status": {
                 "status_code": 442,
@@ -120,7 +120,7 @@ def store_inputs(table_name: str, table_item: dict) -> dict:
         }
     else:
         # Log info - success
-        print(f'\t{table_item["uid"]}: Log info - success')
+        print(f'\t{table_item["username"]}: Log info - success')
         return {
             "status": {
                 "status_code": 200,
@@ -133,8 +133,8 @@ if __name__ == "__main__":
     # TEST STORE INPUTS
     # import threading
     # item2 = {
-    #     "uid": f"TEST-123",
     #     "name": "TEST",
+    #     "time_stamp": "123"
     #     "stage": "init",
     #     "address": "My Street 123",
     #     "state": "Ohio",
@@ -146,8 +146,8 @@ if __name__ == "__main__":
     #     "capacity": "14",
     # }
     # item1 = {
-    #     "uid": f"TEST-321",
     #     "name": "TEST",
+    #     "time_stamp": "123"
     #     "stage": "init",
     #     "address": "My Street 123",
     #     "state": "Ohio",
@@ -168,7 +168,7 @@ if __name__ == "__main__":
 
     # TEST SOLAR API CALL
     # inputs = {
-    #     "uid": "Ryan",
+    #     "name": "Ryan",
     #     "address": "123 My House, 93101",
     #     "capacity": 1
     # }

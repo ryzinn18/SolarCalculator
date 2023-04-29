@@ -54,17 +54,19 @@ function _toggleLoaderOn() {
     document.getElementById('loading').style.display = "block";
 }
 
+
 function _toggleLoaderOff() {
     // Temporarily display loader page after submitting input
     document.getElementById('loading').style.display = "none";
 }
+
 
 function _getInitData() {
     // Get all of the data from the initial input form
 
     // Define initData object from input form values
     let initData = {
-        name: document.getElementById('name').value,
+        username: document.getElementById('username').value,
         address: document.getElementById('address').value,
         rating: document.getElementById('rating').value,
         energy: [],
@@ -86,10 +88,12 @@ function _getInitData() {
 function _getFinalData() {
     // Get necessary data from final form
     const finalData = {
-        uid: document.getElementById('uid').innerHTML,
+        username: document.getElementById('username').value,
+        time_stamp: document.getElementById('time-stamp').innerHTML,
         address: document.getElementById('address').value,
         mod_quantity: document.getElementById('mod-quantity').value,
         capacity: document.getElementById('capacity').innerHTML,
+        rating: document.getElementById('rating').value,
     };
 
     return finalData;
@@ -112,7 +116,7 @@ function _showFinalSection(init_data, solar_data) {
     // Display final-data section
     document.getElementById('final-data').style.display = "block";
     // Fill out final-data section
-    document.getElementById('uid').innerHTML = solar_data.uid;
+    document.getElementById('time-stamp').innerHTML = init_data.time_stamp;
     document.getElementById('mod-quantity').value = quantity;
     document.getElementById('capacity').innerHTML = capacity;
 }
@@ -140,7 +144,7 @@ function initialize() {
 
     // First, call /validate
     // Define /validate args
-    const init_parameters = `?name=${initData.name}&address=${initData.address}&rating=${initData.rating}&energy=${initData.energy}&cost=${initData.cost}`;
+    const init_parameters = `?username=${initData.username}&address=${initData.address}&rating=${initData.rating}&energy=${initData.energy}&cost=${initData.cost}`;
     // Fetch /validate
     fetch(`/inputs/validate/${init_parameters}`)
     .then((res_validate) => res_validate.json())
@@ -148,7 +152,7 @@ function initialize() {
         if (init_data.status.status_code == 200) {
             // If Validating data is successful, get init solar data
             // Define /get-solar args
-            const solar_parameters = `?uid=${init_data.uid}&address=${init_data.address}&capacity=1`;
+            const solar_parameters = `?address=${init_data.address}&capacity=1`;
             // Fetch /get-solar
             return fetch(`/get-solar/${solar_parameters}`)
                 .then((res_solar) => res_solar.json())
@@ -176,39 +180,43 @@ function finalize() {
     // Organize getting the results data
 
     // Toggle loader to on
-    //toggleLoaderOn();
+    _toggleLoaderOn();
 
-    // Define UID parameter for accessing init data
+    // Define
     //const initData = _getInitData();
     const finalData = _getFinalData();
 
-    const solar_parameters = `?uid=${finalData.uid}&address=${finalData.address}&capacity=${finalData.capacity}`
+    const solar_parameters = `?capacity=${finalData.capacity}&address=${finalData.address}`;
     fetch(`/get-solar/${solar_parameters}`)
     .then((res_solar) => res_solar.json())
     .then((solar_data) => {
         if (solar_data.status.status_code == 200) {
-            // If the /get-solar call is successful, display final section
-            const final_parameters = `?uid=${finalData.uid}`
-            alert('GREAT SUCCESS')
-            return fetch(`/inputs/finalize/${solar_parameters}`)
+            // If the /get-solar call is successful, call /inputs/finalize/
+            const final_parameters = `?username=${finalData.username}&time=${finalData.time_stamp}&capacity=${finalData.capacity}&rating=${finalData.rating}&monthly=${solar_data.output_monthly}&annual=${solar_data.output_annual}&state=${solar_data.state}`;
+            return fetch(`/inputs/finalize/${final_parameters}`)
                 .then((res_final) => res_final.json())
                 .then((inputs) => {
                     if (inputs.status.status_code == 200) {
-                        // If the /get-solar call is successful, display final section
-                        _showFinalSection(init_data, solar_data);
-                        _toggleLoaderOff();
+                        // If the /inputs/finalize/ call is successful, call /get-results
+                        alert('GREAT SUCCESS');
+                        const results_parameters = `?username=${finalData.username}&time=${finalData.time_stamp}`
+                        return fetch(`/results/${results_parameters}`)
+                            .then((res_final) => res_final.json())
+                            .then((inputs) => {
+
+                            })
                     } else {
                         // If the /get-solar call is unsuccessful, alert user
-                        alert(`Error: ${solar_data.status.message}`);
+                        alert(`Error1: ${solar_data.status.message}`);
                         _toggleLoaderOff();
                     }
-                }).catch((e) => alert(`Error: ${e}`));
-            } else {
-                // If the /get-solar call is unsuccessful, alert user
-                alert(`Error: ${solar_data.status.message}`);
-                _toggleLoaderOff();
-            }
-        }).catch((e) => alert(`Error: ${e}`));
+                }).catch((e) => alert(`Error2: ${e}`));
+        } else {
+            // If the /get-solar call is unsuccessful, alert user
+            alert(`Error3: ${solar_data.status.message}`);
+            _toggleLoaderOff();
+        }
+        }).catch((e) => alert(`Error4: ${e}`));
 }
 
 
