@@ -111,7 +111,7 @@ function _lockInitForm() {
 
 function _showFinalSection(init_data, solar_data) {
     // Calculate suggested figures for display
-    const capacity = Math.round((init_data.energy_annual / solar_data.output_annual) * 100) / 100;
+    const capacity = Math.round((init_data.consumption_annual / solar_data.output_annual) * 100) / 100;
     const quantity = Math.round(capacity / init_data.rating) + 1;
     // Display final-data section
     document.getElementById('final-data').style.display = "block";

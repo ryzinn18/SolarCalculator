@@ -57,9 +57,9 @@ def validate():
         "time_stamp": time_stamp,
         "address": address,
         "rating": Decimal(str(rating)),
-        "energy_monthly": energy_monthly,
+        "consumption_monthly": energy_monthly,
         "cost_monthly": [Decimal(str(n)) for n in cost_monthly],
-        "energy_annual": energy_annual,
+        "consumption_annual": energy_annual,
         "cost_annual": cost_annual,
         "state_residence": None,
         "state_price": None,
@@ -193,16 +193,16 @@ def get_results():
         "mod_quantity": int(data.get('mod_quantity')),
         "cost_monthly": [round(float(n), 2) for n in data.get('cost_monthly')],
         "cost_annual": int(data.get('cost_annual')),
-        "energy_monthly": [int(n) for n in data.get('energy_monthly')],
-        "energy_annual": int(data.get('energy_annual')),
+        "consumption_monthly": [int(n) for n in data.get('consumption_monthly')],
+        "consumption_annual": int(data.get('consumption_annual')),
         "output_monthly": [int(n) for n in data.get('output_monthly')],
         "output_annual": int(data.get('output_annual')),
         "total_price": int(data.get('total_price')),
         "tax_credit": int(data.get('tax_credit')),
         "discount_price": int(data.get('discount_price')),
     }
-    results_data = invoke_lambda(function='sc-be-results', inputs=inputs)
-    if not results_data:
-        return jsonify({"status": {"status_code": 442, "message": "Unable to retrieve Solar data."}})
+    # results_data = invoke_lambda(function='sc-be-results', inputs=inputs)
+    # if not results_data:
+    #     return jsonify({"status": {"status_code": 442, "message": "Unable to retrieve Results data."}})
 
     return jsonify({"status": {"status_code": 200, "message": "Data finalized."}})
