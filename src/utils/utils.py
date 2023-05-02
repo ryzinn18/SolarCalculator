@@ -65,6 +65,41 @@ PandasDataFrame = TypeVar('PandasDataFrame')
 StatusCode = conint(gt=99, lt=600)
 
 
+class S3Url:
+    __slots__ = 'path'
+
+    def __init__(self, bucket_name: str, obj_key: str):
+        """Simple class for creating specific s3 object paths."""
+
+        self.path = f"https://{bucket_name}.s3.us-west-1.amazonaws.com/{obj_key.replace(':', '%')}"
+
+
+def invoke_lambda(function: str, inputs: dict) -> dict:
+    """Call Lambda function sc-be-solar for solar data."""
+    lambda_client = boto_client('lambda')
+
+    response = lambda_client.invoke(
+        FunctionName=function,
+        InvocationType='RequestResponse',
+        Payload=json.dumps(inputs)
+    )
+    outputs = json.loads(response.get('Payload').read().decode("utf-8"))
+
+    response_status = response.get('ResponseMetadata').get('HTTPStatusCode')
+    response_outputs = outputs.get('status').get('status_code')
+    if not check_http_response(response_status) or not check_http_response(response_outputs):
+        if response_outputs == 422:
+            # Log error - PvWatts call failed
+            pass
+        else:
+            # Log error - Lambda invoke failed/PvWatts call failed
+            pass
+
+        return {}
+
+    return outputs
+
+
 def post_item_to_dynamodb(dynamo_table, item: dict) -> int:
     """Post a db item to DynamoDB and return the response code."""
 
