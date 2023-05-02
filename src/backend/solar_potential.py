@@ -68,17 +68,19 @@ def _get_iridescence_obj(params: dict, nrel_token: str) -> dict:
 
 def get_solar_potential(input_data: dict) -> dict:
     """Call NREL's API for solar data related to array location (address) and capacity."""
+    primary_key = f'{input_data.get("username")}-{input_data.get("time_stamp")}'
 
-    LOGGER.info(f'get_solar_potential() called for uid: {input_data.get("uid")}')
+    LOGGER.info(f'get_solar_potential() called for user: {primary_key}')
 
     # Get data:
     params = _get_params(capacity=input_data.get('capacity'), address=input_data.get('address'))
     response = _get_iridescence_obj(params=params, nrel_token=NREL_API_KEY)
     # Organize data:
     if response.get('errors'):
-        LOGGER.info(f'_get_iridescence_obj() response returned errors for uid: {input_data.get("uid")}')
+        LOGGER.info(f'_get_iridescence_obj() response returned errors for user: {primary_key}')
         return {
-            'uid': input_data.get("uid"),
+            'username': response.get('username'),
+            'time_stamp': response.get('time_stamp'),
             'errors': response.get('errors'),
             'status': {
                 'status_code': 422,
@@ -86,9 +88,10 @@ def get_solar_potential(input_data: dict) -> dict:
             }
         }
     else:
-        LOGGER.info(f'get_solar_potential() called successfully for uid: {input_data.get("uid")}')
+        LOGGER.info(f'get_solar_potential() called successfully for user: {primary_key}')
         return {
-            'uid': input_data.get("uid"),
+            'username': response.get('username'),
+            'time_stamp': response.get('time_stamp'),
             'output_monthly': [round(elem) for elem in response.get('outputs').get('ac_monthly')],
             'output_annual': round(float(response.get('outputs').get('ac_annual')), 2),
             'state': response.get('station_info').get('state'),
@@ -102,21 +105,22 @@ def get_solar_potential(input_data: dict) -> dict:
 def solar_potential_handler(event: dict, context) -> dict:
     """Handler for calling get_solar_potential() and returning validated object."""
 
-    LOGGER.info(f'Called Handler function for getting solar data event for uid: {event.get("uid")}')
+    LOGGER.info(f'Called Handler function for getting solar data event for '
+                'uid: {event.get("username")}-{event.get("time_stamp")}')
 
     # Handle getting the necessary data
     try:
         solar_data = get_solar_potential(input_data=event)
     except Exception as e:
-        uid = event.get("uid") if event.get("uid") else f"NA-{dt.now().__str__().replace(' ', '_').replace(':', '.')}"
         solar_data = {
-            "uid": uid,
+            'username': event.get('username'),
+            'time_stamp': event.get('time_stamp'),
             "status": {
                 "status_code": 400,
                 "message": f"get_solar_potential() called unsuccessfully due to error: {e.__repr__()}"
             }
         }
-        LOGGER.error(f'Lambda Handler for solar data failed for uid: {uid}')
+        LOGGER.error(f'Lambda Handler for solar data failed for uid: {event.get("username")}-{event.get("time_stamp")}')
         LOGGER.error(e, exc_info=True)
 
     return solar_data
