@@ -1,35 +1,24 @@
 # SolarCalculator/src/backend/results.py
 # Integrates InputData and SolarPotentialData into Results data object and creates outputs
-import matplotlib.pyplot as plt
 from pandas import DataFrame
 from boto3 import resource as boto_resource
 from pydantic import PositiveFloat
 
 from csv import writer as csv_writer
 from logging import getLogger
-from math import ceil
 from decimal import Decimal
 from json import loads as j_loads, dumps as j_dumps
 from os import PathLike
-from typing import Union, Sequence, Collection, Callable, Literal
+from typing import Union, Sequence, Collection, Callable
 import io
-from datetime import datetime as dt
+from concurrent.futures import ThreadPoolExecutor
+import unittest
 
-from utils import Results, MONTHS_MAP, IntListMonthly, FloatListMonthly, Status, check_http_response
-from config import DYNAMODB_TABLE_NAME
+from utils import  MONTHS_MAP, IntListMonthly, FloatListMonthly, check_http_response, S3Url, invoke_lambda, import_json
 
 LOGGER = getLogger(__name__)
 S3 = boto_resource('s3')
 DYNAMODB = boto_resource('dynamodb')
-
-
-class S3Url:
-    __slots__ = 'path'
-
-    def __init__(self, bucket_name: str, obj_key: str):
-        """Simple class for creating specific s3 object paths."""
-
-        self.path = f"https://{bucket_name}.s3.us-west-1.amazonaws.com/{obj_key.replace(':', '%')}"
 
 
 def _average(iterable: Union[Sequence, Collection]) -> int:
@@ -41,7 +30,7 @@ def _average(iterable: Union[Sequence, Collection]) -> int:
 def get_data_df(
         input_data: dict, solar_potential_monthly: IntListMonthly, potential_cost_monthly: FloatListMonthly,
         potential_value: FloatListMonthly, savings_monthly: FloatListMonthly, cost_reduction_monthly: FloatListMonthly
-    ) -> DataFrame:
+) -> DataFrame:
     """Creates a pandas data frame with all the input, solar, and analysis data and their annual sums."""
 
     LOGGER.info('Creating DataFrame of core data')
@@ -75,22 +64,6 @@ def post_data_csv_to_s3(data_df: DataFrame, obj_key: str, bucket_name='sc-output
     return S3Url(bucket_name=bucket_name, obj_key=obj_key).path
 
 
-def post_obj_to_s3(bucket_name: str, obj_key: str, content_type: str, obj_format='png') -> S3Url.path:
-    """Posts an object (e.g., image) to s3 bucket."""
-
-    obj_key = obj_key + '.' + obj_format
-    # Create stream for the object
-    data = io.BytesIO()
-    plt.savefig(fname=data, format=obj_format, transparent=True)
-    # Set stream position to start of stream
-    data.seek(0)
-    # Get bucket item, post the object, and return response
-    bucket = S3.Bucket(bucket_name)
-    bucket.put_object(Body=data, ContentType=content_type, Key=obj_key)
-
-    return S3Url(bucket_name=bucket_name, obj_key=obj_key).path
-
-
 def post_item_to_dynamodb(dynamo_table, item: dict) -> int:
     """Post a db item to DynamoDB and return the response code."""
 
@@ -99,79 +72,20 @@ def post_item_to_dynamodb(dynamo_table, item: dict) -> int:
     ).get('ResponseMetadata').get('HTTPStatusCode')
 
 
-def create_comparison_graph(
-        title: str, df1: DataFrame, df2: DataFrame, label1: str, label2: str, y_label: str,
-        graph_type: Literal['energy', 'cost'], uid: str) -> S3Url.path:
-    """Creates a graph with 2 overlying plots for comparison."""
+def _calculate_cost_per_kwh(cost: IntListMonthly, consumption: IntListMonthly) -> PositiveFloat:
+    """Return the average cost per kWh for a year's inputs"""
 
-    LOGGER.info(f'Creating the {graph_type} comparison graph for uid "{uid}"')
-
-    def _plot_bar(df: DataFrame, label: str, color: str, top: bool) -> None:
-        """Plot a bar-plot and set the label."""
-        opacity = 0.5 if top else 1
-        # Plot the bar plot
-        _ax = ax.bar(
-            x=list(MONTHS_MAP.values()),
-            height=df.drop(df.index[-1]),
-            width=1,
-            color=color,
-            label=label,
-            edgecolor='white',
-            capstyle='round',
-            alpha=opacity
-        )
-        # Display the numbers on the bar-plots
-        ax.bar_label(
-            container=_ax,
-            padding=-15,
-            fmt='$%g' if graph_type == 'cost' else '%g'
-        )
-
-    # Define color_map for storing colors based on graph type
-    color_map = {  # key: [df1-color, df2-color]
-        'energy': ['indianred', 'gold'],
-        'cost': ['red', 'green']
-    }
-    # Set fonts as bold
-    plt.title(label=title, weight='bold')
-    plt.text(x=None, y=None, s=None, weight='bold')
-    # Establish subplot figure.axes
-    fig, ax = plt.subplots()
-    ax.set_title(label=title)
-    # Plot both datasets you are comparing as bar-plots
-    _plot_bar(df=df1, label=label1, color=color_map[graph_type][0], top=False)
-    _plot_bar(df=df2, label=label2, color=color_map[graph_type][1], top=True)
-    # Set x and y labels
-    ax.set_xlabel(xlabel='Month')
-    ax.set_ylabel(ylabel=y_label)
-    # Rotate month (x) labels by 45 degrees
-    [item.set_rotation(45) for item in ax.get_xticklabels()]
-    # Set background color
-    ax.set_facecolor('lightseagreen')
-
-    # Set legend
-    legend = ax.legend(fontsize="large", loc='lower center')
-    # legend.get_frame().set_color("xkcd:salmon")
-
-    # Tighten layout
-    plt.tight_layout()
-
-    # Save the figure
-    bucket_name = f"sc-outputs-graph-{graph_type}"
-    url = post_obj_to_s3(
-        bucket_name=bucket_name,
-        obj_key=uid,
-        content_type='image/png'
-    )
-
-    LOGGER.info(f'Graph created and put in s3 bucket - {bucket_name} - with key "{uid}"')
-    return url
+    # Get a list of the cost/kWh for each month
+    monthly_cost_per_kwh = [(cos / kwh) for cos, kwh in zip(cost, consumption)]
+    # Calculate and return the average cost/kWh for the year
+    return round(sum(monthly_cost_per_kwh) / len(monthly_cost_per_kwh), 2)
 
 
-def calculate_insights(
-        solar_potential_monthly: IntListMonthly, consumption_monthly: IntListMonthly,
-        cost_per_kwh: PositiveFloat, cost_monthly: FloatListMonthly) -> dict:
-    """"""
+def calculate_production_insights(
+        solar_potential_monthly: IntListMonthly, actual_consumption_monthly: IntListMonthly,
+        cost_per_kwh: PositiveFloat, actual_cost_monthly: FloatListMonthly) -> dict:
+    """Calculate insight into user inputs and solar data."""
+
     def _helper_calculate(func: Callable, zipped: tuple, arg3=None) -> FloatListMonthly:
         """Helper to clean up calculations for different monthly and annual figures."""
 
@@ -182,158 +96,258 @@ def calculate_insights(
         return out
 
     # Calculate Production Value, Potential Cost, Savings, and Cost Reduction
-    production_value = _helper_calculate(
+    production_value_monthly = _helper_calculate(
         func=lambda a1, a2, a3: round(a1 * a3, 2),
         zipped=zip(solar_potential_monthly, range(12)),
         arg3=cost_per_kwh
     )
     potential_cost_monthly = _helper_calculate(
         func=lambda a1, a2, a3: round((a1 - a2) * a3, 2),
-        zipped=zip(consumption_monthly, solar_potential_monthly),
+        zipped=zip(actual_consumption_monthly, solar_potential_monthly),
         arg3=cost_per_kwh
     )
-    savings_monthly = _helper_calculate(
+    cost_savings_monthly = _helper_calculate(
         func=lambda a1, a2, a3: round((a1 - a2), 2),
-        zipped=zip(cost_monthly, potential_cost_monthly)
+        zipped=zip(actual_cost_monthly, potential_cost_monthly)
     )
     cost_reduction_monthly = _helper_calculate(
         func=lambda a1, a2, a3: round(((a1 / a2) * 100), 2),
-        zipped=zip(savings_monthly, cost_monthly)
+        zipped=zip(cost_savings_monthly, actual_cost_monthly)
+    )
+    energy_savings_monthly = _helper_calculate(
+        func=lambda a1, a2, a3: round((a1 - a2), 2),
+        zipped=zip(actual_consumption_monthly, solar_potential_monthly)
+    )
+    energy_reduction_monthly = _helper_calculate(
+        func=lambda a1, a2, a3: round(((a1 / a2) * 100), 2),
+        zipped=zip(energy_savings_monthly, actual_consumption_monthly)
     )
 
     return {
-        'production_value': production_value,
+        'production_value_monthly': production_value_monthly,
+        'production_value_annual': round(sum(production_value_monthly), 2),
         'potential_cost_monthly': potential_cost_monthly,
-        'savings_monthly': savings_monthly,
-        'cost_reduction_monthly': cost_reduction_monthly
+        'potential_cost_annual': round(sum(potential_cost_monthly), 2),
+        'cost_savings_monthly': cost_savings_monthly,
+        'cost_savings_annual': round(sum(cost_savings_monthly), 2),
+        'cost_reduction_monthly': cost_reduction_monthly,
+        'cost_reduction_annual': _average(cost_reduction_monthly),
+        'energy_savings_monthly': energy_savings_monthly,
+        'energy_savings_annual': round(sum(energy_savings_monthly), 2),
+        'energy_reduction_monthly': energy_reduction_monthly,
+        'energy_reduction_annual': _average(energy_reduction_monthly),
+        'status': {
+            'status_code': 200,
+            'message': 'Monthly insights calculated successfully.'
+        }
     }
 
 
-def get_results(input_data: dict, solar_data: dict) -> Results:
+def get_state_price(state: str) -> dict:
+    """Query SolarCostData.json for price per watt in specific state."""
+    try:
+        data = import_json(
+            path='/Users/ryanwright-zinniger/Desktop/SolarCalculator/src/frontend/static/data/SolarCostData.json'
+        )
+    except OSError:
+        return {"status": {"status_code": 400, "message": f"Could not retrieve SolarCostData.json."}}
+
+    try:
+        state_price = round(float(data.get(state)), 2)
+    except ValueError:
+        return {"status": {"status_code": 400, "message": f"Could not retrieve data for state: '{state}'."}}
+
+    return {
+        "state_price": state_price,
+        "status": {"status_code": 200, "message": "State price attained successfully."}
+    }
+
+
+def calculate_price_insights(state_price: float, capacity: float) -> dict:
+    """Calculate price insight info and retrieve state price per watt."""
+
+    try:
+        total_price = round(state_price * capacity * 1000)
+    except ValueError:
+        return {"status": {
+            "status_code": 400,
+            "message": f"Encountered a value error with calculate_price_insights()."
+        }}
+
+    return {
+        'total_price': total_price,
+        'tax_credit': round(total_price * 0.3),
+        'discount_price': round(total_price * 0.7),
+        "status": {"status_code": 200, "message": "Price insights calculated successfully."}
+    }
+
+
+def get_results(input_data: dict) -> dict:
     """Create graphs, calculate savings and mod quantity, and return Results data object."""
+    primary_key = f"{input_data['username']}-{input_data['time_stamp']}"
 
-    LOGGER.info(f'Generating ResultsData for uid: {input_data.get("uid")}')
+    LOGGER.info(f'Generating results for user: {primary_key}')
 
-    insights = calculate_insights(
-        solar_potential_monthly=solar_data.get('solar_potential_monthly'),
-        consumption_monthly=input_data.get('consumption_monthly'),
-        cost_per_kwh=input_data.get('cost_per_kwh'),
-        cost_monthly=input_data.get('cost_monthly')
+    cost_per_kwh = _calculate_cost_per_kwh(
+        cost=input_data.get('cost_monthly'),
+        consumption=input_data.get('consumption_monthly')
     )
-
+    state_price = get_state_price(
+        state=input_data.get('state')
+    )
+    production_insights = calculate_production_insights(
+        solar_potential_monthly=input_data.get('output_monthly'),
+        actual_consumption_monthly=input_data.get('consumption_monthly'),
+        cost_per_kwh=cost_per_kwh,
+        actual_cost_monthly=input_data.get('cost_monthly')
+    )
+    price_insights = calculate_price_insights(
+        state_price=state_price.get('state_price'),
+        capacity=input_data.get('capacity')
+    )
     # Create DataFrame with all data for graphing/writing outputs
-    results_df = get_data_df(
+    production_df = get_data_df(
         input_data=input_data,
-        solar_potential_monthly=solar_data.get('solar_potential_monthly'),
-        potential_cost_monthly=insights['potential_cost_monthly'],
-        potential_value=insights['production_value'],
-        savings_monthly=insights['savings_monthly'],
-        cost_reduction_monthly=insights['cost_reduction_monthly'],
+        solar_potential_monthly=input_data.get('output_monthly'),
+        potential_cost_monthly=production_insights.get('potential_cost_monthly'),
+        potential_value=production_insights.get('production_value_monthly'),
+        savings_monthly=production_insights.get('savings_monthly'),
+        cost_reduction_monthly=production_insights.get('cost_reduction_monthly'),
     )
-    # Create data csv and save to s3 bucket
-    url_data_csv = post_data_csv_to_s3(data_df=results_df, obj_key=input_data['uid'])
 
 
-    # Create cost comparison graph
-    url_cost_graph = create_comparison_graph(
-        title="Reported Cost vs Production Value",
-        df1=results_df['Cost $'].round(),
-        df2=results_df['Potential Value $'].round(),
-        label1='Reported Cost',
-        label2='Production Value',
-        y_label='Dollars',
-        graph_type='cost',
-        uid=input_data['uid']
-    )
-    # Create consumption vs production graph
-    url_energy_graph = create_comparison_graph(
-        title="Energy Consumption vs Potential Production",
-        df1=results_df['Consumption kWh'],
-        df2=results_df['Potential kWh'],
-        label1='Energy Consumption',
-        label2='Potential Energy Production',
-        y_label=solar_data.get('units_solar_potential'),
-        graph_type='energy',
-        uid=input_data['uid']
-    )
-    # Calculate amount of mods needed for project
-    mod_quantity = ceil(solar_data.get('needed_kwh') / input_data.get('mod_kwh'))
+    # Create graph inputs
+    inputs_cost_graph = {
+        "title": "Reported Cost vs Production Value",
+        "df1": production_df['Cost $'].round(),
+        "df2": production_df['Potential Value $'].round(),
+        "label1": 'Reported Cost',
+        "label2": 'Production Value',
+        "y_label": 'Dollars',
+        "graph_type": 'cost',
+        "graph_flavor": "comparison",
+        "uid": primary_key
+    }
+    inputs_energy_graph = {
+        "title": "Energy Consumption vs Potential Production",
+        "df1": production_df['Consumption kWh'],
+        "df2": production_df['Potential kWh'],
+        "label1": 'Energy Consumption',
+        "label2": 'Potential Energy Production',
+        "y_label": 'kWh',
+        "graph_type": 'energy',
+        "graph_flavor": "comparison",
+        "uid": primary_key
+    }
+    with ThreadPoolExecutor() as executor:
+
+        # Create data csv and save to s3 bucket
+        url_data_csv = executor.submit(post_data_csv_to_s3, production_df, primary_key)
+
+        # Create graphs and save to s3 buckets
+        url_cost_graph = executor.submit(invoke_lambda, 'sc-be-results-graphs', inputs_cost_graph)
+        url_energy_graph = executor.submit(invoke_lambda, 'sc-be-results-graphs', inputs_energy_graph)
+
+
+    return {
+        "url_data_csv": url_data_csv,
+        "url_cost_graph": url_cost_graph,
+        "url_energy_graph": url_energy_graph,
+        "status": {
+            "status_code": 200,
+            "message": "Solar data retrieved successfully."
+        }
+    }
 
     # Create the Results data object
-    result = Results(
-        uid=input_data['uid'],
-        name=input_data['name'],
-        time_stamp=dt.now().__str__(),
-        status=Status(status_code=200, message="get_results() called successfully."),
-        address=input_data['address'],
-        actual_consumption_monthly=input_data['consumption_monthly'],
-        actual_cost_monthly=input_data['cost_monthly'],
-        potential_production_monthly=solar_data['solar_potential_monthly'],
-        production_value=insights['production_value'],
-        potential_cost_monthly=insights['potential_cost_monthly'],
-        savings_monthly=insights['savings_monthly'],
-        cost_reduction_monthly=insights['cost_reduction_monthly'],
-        cost_reduction_average=_average(insights['cost_reduction_monthly']),
-        results_data_json=results_df.to_json(),
-        mod_quantity=mod_quantity,
-        url_data_csv=url_data_csv,
-        url_graph_cost=url_cost_graph,
-        url_graph_energy=url_energy_graph
-    )
-    LOGGER.info(f'Results data object successfully created and validated: {result}')
+    # result = Results(
+    #     uid=primary_key,
+    #     name=input_data.get('name'),
+    #     time_stamp=input_data.get('time_stamp'),
+    #     status={
+    #         "status_code": 200,
+    #         "message": "get_results() called successfully."
+    #     },
+    #     address=input_data.get('address'),
+    #     actual_consumption_monthly=input_data.get('consumption_monthly'),
+    #     actual_cost_monthly=input_data.get('cost_monthly'),
+    #     potential_production_monthly=input_data.get('output_monthly'),
+    #     production_value=production_insights.get('production_value_monthly'),
+    #     potential_cost_monthly=production_insights.get('potential_cost_monthly'),
+    #     savings_monthly=production_insights.get('savings_monthly'),
+    #     cost_reduction_monthly=production_insights.get('cost_reduction_monthly'),
+    #     cost_reduction_average=_average(production_insights.get('cost_reduction_monthly')),
+    #     results_data_json=results_df.to_json(),
+    #     mod_quantity=input_data.get('mod_quantity'),
+    #     url_data_csv=url_data_csv,
+    #     url_graph_cost=url_cost_graph,
+    #     url_graph_energy=url_energy_graph
+    # )
+    # LOGGER.info(f'Results data object successfully created and validated: {result}')
+    #
+    # # Declare which data will be included in table
+    # table_item = {
+    #     'uid': result.uid, 'name': result.name, 'address': result.address, 'mod_quantity': mod_quantity,
+    #     'results_data': j_loads(j_dumps(results_df.to_json()), parse_float=Decimal),
+    #     'data_csv': url_data_csv,
+    #     'cost_graph': url_cost_graph,
+    #     'energy_graph': url_energy_graph
+    # }
+    # # Post item to DynamoDB with necessary data and verify a non 200 response is given
+    # response_code = post_item_to_dynamodb(dynamo_table=DYNAMODB.Table('sc-outputs'), item=table_item)
+    # if not check_http_response(response_code=response_code):
+    #     note = f"A {response_code} response was returned when writing to DynamoDB table 'sc-outputs'."
+    #     LOGGER.error(note)
+    #     raise Exception(note)
+    #
+    # LOGGER.info(
+    #     f'Necessary data successfully written to DynamoDB table "sc-outputs" with key "{result.uid}"'
+    # )
+    # return result
 
-    # Declare which data will be included in table
-    table_item = {
-        'uid': result.uid, 'name': result.name, 'address': result.address, 'mod_quantity': mod_quantity,
-        'results_data': j_loads(j_dumps(results_df.to_json()), parse_float=Decimal),
-        'data_csv': url_data_csv,
-        'cost_graph': url_cost_graph,
-        'energy_graph': url_energy_graph
-    }
-    # Post item to DynamoDB with necessary data and verify a non 200 response is given
-    response_code = post_item_to_dynamodb(dynamo_table=DYNAMODB.Table(DYNAMODB_TABLE_NAME), item=table_item)
-    if not check_http_response(response_code=response_code):
-        note = f"A {response_code} response was returned when writing to DynamoDB table '{DYNAMODB_TABLE_NAME}'."
-        LOGGER.error(note)
-        raise Exception(note)
 
-    LOGGER.info(
-        f'Necessary data successfully written to DynamoDB table "{DYNAMODB_TABLE_NAME}" with key "{result.uid}"'
-    )
-    return result
-
-
-def results_handler(input_data: dict, solar_data: dict) -> dict:
+def results_handler(event: dict, context) -> dict:
     """Handler function for getting final results event object."""
 
-    LOGGER.info(f'Called handler function for getting input data event for uid: {input_data["uid"]}')
+    LOGGER.info(f"Called sc-be-results's handler function for user: {event['username']}-{event['time_stamp']}")
 
-    # Handle getting the necessary data
+    # Handle calling main function
     try:
         results_data = get_results(
-            input_data=input_data,
-            solar_data=solar_data
+            input_data=event,
         ).dict()
-        LOGGER.info(f'Lambda Handler for results data successfully executed for uid: {input_data["uid"]}')
+        LOGGER.info(f"sc-be-results's handler function successfully executed for user:"
+                    f" {event['username']}-{event['time_stamp']}")
     except Exception as e:
-        time_stamp = dt.now().__str__()
-        uid = input_data.get("uid") if input_data.get("uid") else "NA" + time_stamp
+        time_stamp = event.get("time_stamp") if event.get("time_stamp") else "NA"
+        username = event.get("username") if event.get("username") else "NA"
         results_data = {
+            "username": username,
             "time_stamp": time_stamp,
-            "uid": uid,
-            "status": Status(
-                status_code=400, message=f"get_results() called unsuccessfully due to error: {e.__repr__()}"
-            )
+            "status": {
+                "status_code": 400,
+                "message": f"sc-be-results's handler function unsuccessfully executed for user: "
+                           f"{event['username']}-{event['time_stamp']}.\n"
+            }
         }
         LOGGER.error(e, exc_info=True)
 
     return results_data
 
 
-if __name__ == '__main__':
-    from utils import import_json, SAMPLES
-    print(results_handler(import_json(SAMPLES['event_ready_for_solar']), import_json(SAMPLES['event_ready_for_results'])))
+class TestCostPerKwh(unittest.TestCase):
+    def runTest(self):
+        cost_per_kwh = _calculate_cost_per_kwh([2] * 12, [4] * 12)
+        self.assertEqual(cost_per_kwh, 0.5)
 
+
+if __name__ == '__main__':
+    # from utils import import_json, SAMPLES
+    #
+    # print(
+    #     results_handler(import_json(SAMPLES['event_ready_for_solar']), import_json(SAMPLES['event_ready_for_results'])))
+    # unittest.main()
+    print(_calculate_cost_per_kwh([2] * 12, [4] * 12))
 
 def DEPRECATED_create_out_csv(header: dict, data_df: DataFrame, footer: dict, out_path: Union[PathLike, str]) -> None:
     """
