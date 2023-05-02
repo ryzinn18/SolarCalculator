@@ -61,15 +61,11 @@ def validate():
         "cost_monthly": [Decimal(str(n)) for n in cost_monthly],
         "consumption_annual": energy_annual,
         "cost_annual": cost_annual,
-        "state_residence": None,
-        "state_price": None,
-        "output_monthly": None,
-        "output_annual": None,
         "array_capacity": None,
         "mod_quantity": None,
-        "total_price": None,
-        "tax_credit": None,
-        "discount_price": None,
+        "state_residence": None,
+        "output_monthly": None,
+        "output_annual": None,
         "status": {
             "status_code": 200,
             "message": "Validation steps completed."
@@ -166,22 +162,22 @@ def get_results():
     data = response.get('Item')
 
     # Call Lambda sc-be-results for results data
-    inputs = {
-        "name": name,
-        "username": username,
-        "time_stamp": time_stamp,
-        "address": data.get('address'),
-        "state": data.get('state_residence'),
-        "rating": round(float(data.get('rating')), 2),
-        "capacity": round(float(data.get('array_capacity')), 2),
-        "mod_quantity": int(data.get('mod_quantity')),
-        "cost_monthly": [round(float(n), 2) for n in data.get('cost_monthly')],
-        "cost_annual": int(data.get('cost_annual')),
-        "consumption_monthly": [int(n) for n in data.get('consumption_monthly')],
-        "consumption_annual": int(data.get('consumption_annual')),
-        "output_monthly": [int(n) for n in data.get('output_monthly')],
-        "output_annual": int(data.get('output_annual')),
-    }
+    # inputs = {
+    #     "name": name,
+    #     "username": username,
+    #     "time_stamp": time_stamp,
+    #     "address": data.get('address'),
+    #     "state": data.get('state_residence'),
+    #     "rating": round(float(data.get('rating')), 2),
+    #     "capacity": round(float(data.get('array_capacity')), 2),
+    #     "mod_quantity": int(data.get('mod_quantity')),
+    #     "cost_monthly": [round(float(n), 2) for n in data.get('cost_monthly')],
+    #     "cost_annual": int(data.get('cost_annual')),
+    #     "consumption_monthly": [int(n) for n in data.get('consumption_monthly')],
+    #     "consumption_annual": int(data.get('consumption_annual')),
+    #     "output_monthly": [int(n) for n in data.get('output_monthly')],
+    #     "output_annual": int(data.get('output_annual')),
+    # }
     # results_data = invoke_lambda(function='sc-be-results', inputs=inputs)
     # if not results_data:
     #     return jsonify({"status": {"status_code": 442, "message": "Unable to retrieve Results data."}})
